@@ -182,7 +182,11 @@ function update() {
             damageFlash = 10; // تفعيل الوميض الأحمر
             screenShake = 5;  // تفعيل اهتزاز الشاشة
             if (Math.random() < 0.03) playSound('hit');
-            if (health <= 0) { alert('انتهت اللعبة! حاول مرة أخرى.'); initGame(); }
+            if (health <= 0) { 
+                alert('انتهت اللعبة! لقد سقطت في رمال الصحراء.'); 
+                cancelAnimationFrame(gameLoop);
+                showScreen('mainMenu'); 
+            }
         }
     });
     

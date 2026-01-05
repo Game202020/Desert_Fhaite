@@ -8,7 +8,7 @@ let isPaused = false;
 let isAttacking = false;
 let attackCooldown = 0;
 
-// المؤثرات الصوتية (تحميل آمن)
+// المؤثرات الصوتية
 const sounds = {
     sword: new Audio('https://assets.mixkit.co/active_storage/sfx/2190/2190-preview.mp3'),
     treasure: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
@@ -19,28 +19,17 @@ function playSound(name) {
     try {
         if (sounds[name]) {
             sounds[name].currentTime = 0;
-            sounds[name].play().catch(e => console.log("Audio play blocked until user interaction"));
+            sounds[name].play().catch(e => {});
         }
-    } catch (e) {
-        console.log("Sound error:", e);
-    }
+    } catch (e) {}
 }
 
 // نظام الكاميرا
 let camera = { x: 0, y: 0 };
 const WORLD_SIZE = 3000;
 
-// نظام الجويستيك (Joystick)
-let joystick = {
-    active: false,
-    baseX: 0,
-    baseY: 0,
-    stickX: 0,
-    stickY: 0,
-    inputX: 0,
-    inputY: 0,
-    maxRadius: 50
-};
+// نظام الجويستيك
+let joystick = { active: false, baseX: 0, baseY: 0, stickX: 0, stickY: 0, inputX: 0, inputY: 0, maxRadius: 50 };
 
 document.addEventListener('DOMContentLoaded', function() {
     canvas = document.getElementById('gameCanvas');
@@ -49,18 +38,12 @@ document.addEventListener('DOMContentLoaded', function() {
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
     }
-    
-    // تهيئة الجويستيك فوراً
     initJoystick();
-    
     const btnAttack = document.getElementById('btnAttack');
     if (btnAttack) {
         btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); keys['attack'] = true; });
         btnAttack.addEventListener('touchend', (e) => { e.preventDefault(); keys['attack'] = false; });
-        btnAttack.addEventListener('mousedown', (e) => { keys['attack'] = true; });
-        btnAttack.addEventListener('mouseup', (e) => { keys['attack'] = false; });
     }
-
     document.addEventListener('keydown', (e) => { keys[e.key] = true; });
     document.addEventListener('keyup', (e) => { keys[e.key] = false; });
 });
@@ -69,11 +52,7 @@ function initJoystick() {
     const container = document.getElementById('joystickContainer');
     const stick = document.getElementById('joystickStick');
     const base = document.getElementById('joystickBase');
-    
-    if (!container || !stick || !base) {
-        console.error("Joystick elements not found!");
-        return;
-    }
+    if (!container || !stick || !base) return;
 
     const handleStart = (e) => {
         e.preventDefault();
@@ -82,47 +61,32 @@ function initJoystick() {
         joystick.baseX = rect.left + rect.width / 2;
         joystick.baseY = rect.top + rect.height / 2;
         joystick.active = true;
-        handleMove(e);
     };
 
     const handleMove = (e) => {
         if (!joystick.active) return;
         const touch = e.touches ? e.touches[0] : e;
-        
         let dx = touch.clientX - joystick.baseX;
         let dy = touch.clientY - joystick.baseY;
         let distance = Math.sqrt(dx * dx + dy * dy);
-        
         if (distance > joystick.maxRadius) {
             dx = (dx / distance) * joystick.maxRadius;
             dy = (dy / distance) * joystick.maxRadius;
-            distance = joystick.maxRadius;
         }
-        
-        joystick.stickX = dx;
-        joystick.stickY = dy;
         joystick.inputX = dx / joystick.maxRadius;
         joystick.inputY = dy / joystick.maxRadius;
-        
         stick.style.transform = `translate(${dx}px, ${dy}px)`;
     };
 
     const handleEnd = () => {
         joystick.active = false;
-        joystick.stickX = 0;
-        joystick.stickY = 0;
-        joystick.inputX = 0;
-        joystick.inputY = 0;
+        joystick.inputX = 0; joystick.inputY = 0;
         stick.style.transform = `translate(0px, 0px)`;
     };
 
-    container.addEventListener('touchstart', handleStart, { passive: false });
+    container.addEventListener('touchstart', handleStart);
     window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
-    
-    container.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
 }
 
 function resizeCanvas() {
@@ -135,9 +99,6 @@ function resizeCanvas() {
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
-    if (screenId === 'gameScreen') {
-        setTimeout(resizeCanvas, 100);
-    }
 }
 
 function startGame() {
@@ -148,49 +109,21 @@ function startGame() {
 }
 
 function initGame() {
-    score = 0; level = 1; health = 100; treasureCount = 0;
+    score = 0; health = 100; treasureCount = 0;
     enemies = []; treasures = []; obstacles = [];
     player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 40, height: 50, speed: 5 };
-    
-    for (let i = 0; i < 100; i++) {
-        obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 40 + Math.random() * 60 });
-    }
-    for (let i = 0; i < 50; i++) {
-        treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
-    }
-    for (let i = 0; i < 20; i++) {
-        enemies.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, health: 50, speed: 1.5 + Math.random() });
-    }
+    for (let i = 0; i < 80; i++) obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 50 });
+    for (let i = 0; i < 40; i++) treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
+    for (let i = 0; i < 15; i++) enemies.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, health: 50, speed: 2 });
 }
 
 function update() {
     if (isPaused) return;
+    let moveX = joystick.active ? joystick.inputX : (keys['ArrowRight'] || keys['d'] ? 1 : (keys['ArrowLeft'] || keys['a'] ? -1 : 0));
+    let moveY = joystick.active ? joystick.inputY : (keys['ArrowDown'] || keys['s'] ? 1 : (keys['ArrowUp'] || keys['w'] ? -1 : 0));
     
-    let moveX = 0;
-    let moveY = 0;
-    
-    if (keys['ArrowRight'] || keys['d']) moveX = 1;
-    if (keys['ArrowLeft'] || keys['a']) moveX = -1;
-    if (keys['ArrowDown'] || keys['s']) moveY = 1;
-    if (keys['ArrowUp'] || keys['w']) moveY = -1;
-    
-    if (joystick.active) {
-        moveX = joystick.inputX;
-        moveY = joystick.inputY;
-    }
-    
-    let nextX = player.x + moveX * player.speed;
-    let nextY = player.y + moveY * player.speed;
-    
-    let canMoveX = true;
-    let canMoveY = true;
-    obstacles.forEach(obs => {
-        if (nextX < obs.x + obs.size && nextX + player.width > obs.x && player.y < obs.y + obs.size && player.y + player.height > obs.y) canMoveX = false;
-        if (player.x < obs.x + obs.size && player.x + player.width > obs.x && nextY < obs.y + obs.size && nextY + player.height > obs.y) canMoveY = false;
-    });
-    
-    if (canMoveX) player.x = nextX;
-    if (canMoveY) player.y = nextY;
+    player.x += moveX * player.speed;
+    player.y += moveY * player.speed;
     
     player.x = Math.max(0, Math.min(WORLD_SIZE - player.width, player.x));
     player.y = Math.max(0, Math.min(WORLD_SIZE - player.height, player.y));
@@ -198,9 +131,7 @@ function update() {
     camera.y = player.y - canvas.height / 2;
     
     if ((keys[' '] || keys['attack']) && attackCooldown <= 0) {
-        isAttacking = true;
-        attackCooldown = 20;
-        playSound('sword');
+        isAttacking = true; attackCooldown = 20; playSound('sword');
         setTimeout(() => isAttacking = false, 150);
         enemies.forEach((enemy, index) => {
             if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 100) {
@@ -219,30 +150,25 @@ function update() {
         }
         if (dist < 40) {
             health -= 0.1;
-            if (Math.random() < 0.05) playSound('hit');
+            if (Math.random() < 0.02) playSound('hit');
             if (health <= 0) { alert('انتهت اللعبة!'); initGame(); }
         }
     });
     
     treasures.forEach(t => {
         if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 50) {
-            t.collected = true; treasureCount++; score += 100;
-            playSound('treasure');
+            t.collected = true; treasureCount++; score += 100; playSound('treasure');
         }
     });
 
+    // الرسم
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 1. رسم العالم (تحت الظلام)
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
     ctx.fillStyle = '#d2b48c';
     ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
-    
-    ctx.strokeStyle = '#c2a47c';
-    ctx.lineWidth = 2;
-    for(let i=0; i<WORLD_SIZE; i+=200) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, WORLD_SIZE); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(WORLD_SIZE, i); ctx.stroke();
-    }
     
     ctx.fillStyle = '#8b7355';
     obstacles.forEach(obs => { ctx.fillRect(obs.x, obs.y, obs.size, obs.size); });
@@ -255,37 +181,29 @@ function update() {
     
     drawPlayer();
     ctx.restore();
+    
+    // 2. رسم نظام المصباح (طريقة التدرج المضمونة)
     drawLanternEffect();
+    
     updateHUD();
     gameLoop = requestAnimationFrame(update);
 }
 
 function drawLanternEffect() {
     ctx.save();
-    
-    // 1. رسم طبقة سوداء تغطي الشاشة بالكامل
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.94)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // 2. استخدام 'destination-out' لعمل فتحة دائرية شفافة (المصباح)
-    ctx.globalCompositeOperation = 'destination-out';
-    
-    // إنشاء تدرج دائري لجعل حواف الضوء ناعمة
-    // المركز هو دائماً منتصف الكانفاس لأن الكاميرا تتبع اللاعب
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     
-    const gradient = ctx.createRadialGradient(
-        centerX, centerY, 50,
-        centerX, centerY, 220
-    );
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    // إنشاء تدرج شعاعي يغطي الشاشة
+    // المنطقة القريبة شفافة، والبعيدة سوداء
+    const gradient = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 250);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)'); // شفاف حول اللاعب
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)'); // أسود في البعيد
     
     ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 220, 0, Math.PI * 2);
-    ctx.fill();
+    
+    // رسم 4 مستطيلات تغطي الشاشة حول منطقة التدرج لضمان الظلام التام في البعيد
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     ctx.restore();
 }

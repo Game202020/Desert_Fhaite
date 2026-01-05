@@ -8,8 +8,8 @@ let isPaused = false;
 let isAttacking = false;
 let attackCooldown = 0;
 
-// أنيميشن اللاعب
-let playerFrame = 0;
+// أنيميشن اللاعب والأعداء
+let globalFrame = 0;
 let frameCounter = 0;
 
 // المؤثرات الصوتية
@@ -25,7 +25,7 @@ function playSound(name) {
 
 // نظام الكاميرا
 let camera = { x: 0, y: 0 };
-const WORLD_SIZE = 3000;
+const WORLD_SIZE = 4000;
 
 // نظام الجويستيك
 let joystick = { active: false, baseX: 0, baseY: 0, stickX: 0, stickY: 0, inputX: 0, inputY: 0, maxRadius: 50 };
@@ -107,28 +107,32 @@ function initGame() {
     score = 0; health = 100; treasureCount = 0;
     enemies = []; treasures = []; obstacles = [];
     player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 60, height: 80, speed: 5, moving: false };
-    for (let i = 0; i < 80; i++) obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 60 });
-    for (let i = 0; i < 40; i++) treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
     
-    // إنشاء أعداء بأنواع مختلفة
-    const enemyTypes = ['bandit', 'warrior', 'shadow'];
-    for (let i = 0; i < 20; i++) {
-        const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    // توليد عقبات (صخور بكسل آرت)
+    for (let i = 0; i < 100; i++) obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 60 + Math.random() * 40 });
+    
+    // توليد كنوز
+    for (let i = 0; i < 50; i++) treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
+    
+    // توليد أعداء متنوعين (اللص، السياف، الغول)
+    const types = ['bandit', 'warrior', 'ghoul'];
+    for (let i = 0; i < 25; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
         enemies.push({
             x: Math.random() * WORLD_SIZE,
             y: Math.random() * WORLD_SIZE,
             type: type,
-            health: type === 'warrior' ? 80 : 50,
-            speed: type === 'bandit' ? 2.5 : 1.5,
-            width: 50,
-            height: 70,
-            frame: 0
+            health: type === 'warrior' ? 100 : (type === 'ghoul' ? 150 : 60),
+            speed: type === 'bandit' ? 3 : (type === 'warrior' ? 2 : 1.2),
+            width: 60,
+            height: 80
         });
     }
 }
 
 function update() {
     if (isPaused) return;
+    
     let moveX = joystick.active ? joystick.inputX : (keys['ArrowRight'] || keys['d'] ? 1 : (keys['ArrowLeft'] || keys['a'] ? -1 : 0));
     let moveY = joystick.active ? joystick.inputY : (keys['ArrowDown'] || keys['s'] ? 1 : (keys['ArrowUp'] || keys['w'] ? -1 : 0));
     
@@ -136,24 +140,30 @@ function update() {
     player.x += moveX * player.speed;
     player.y += moveY * player.speed;
     
+    // تصادم مع العقبات
+    obstacles.forEach(obs => {
+        if (player.x < obs.x + obs.size && player.x + player.width > obs.x &&
+            player.y < obs.y + obs.size && player.y + player.height > obs.y) {
+            player.x -= moveX * player.speed;
+            player.y -= moveY * player.speed;
+        }
+    });
+
     player.x = Math.max(0, Math.min(WORLD_SIZE - player.width, player.x));
     player.y = Math.max(0, Math.min(WORLD_SIZE - player.height, player.y));
     camera.x = player.x - canvas.width / 2;
     camera.y = player.y - canvas.height / 2;
     
-    // تحديث فريمات الأنيميشن
     frameCounter++;
-    if (frameCounter % 10 === 0) {
-        playerFrame = (playerFrame + 1) % 5;
-    }
+    if (frameCounter % 8 === 0) globalFrame = (globalFrame + 1) % 6;
 
     if ((keys[' '] || keys['attack']) && attackCooldown <= 0) {
-        isAttacking = true; attackCooldown = 20; playSound('sword');
-        setTimeout(() => isAttacking = false, 150);
+        isAttacking = true; attackCooldown = 25; playSound('sword');
+        setTimeout(() => isAttacking = false, 200);
         enemies.forEach((enemy, index) => {
-            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 120) {
-                enemy.health -= 25;
-                if (enemy.health <= 0) { enemies.splice(index, 1); score += 50; }
+            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 130) {
+                enemy.health -= 40;
+                if (enemy.health <= 0) { enemies.splice(index, 1); score += 100; }
             }
         });
     }
@@ -161,188 +171,155 @@ function update() {
 
     enemies.forEach(enemy => {
         let dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < 400) {
+        if (dist < 500) {
             enemy.x += ((player.x - enemy.x) / dist) * enemy.speed;
             enemy.y += ((player.y - enemy.y) / dist) * enemy.speed;
         }
-        if (dist < 40) {
-            health -= 0.1;
-            if (Math.random() < 0.02) playSound('hit');
-            if (health <= 0) { alert('انتهت اللعبة!'); initGame(); }
+        if (dist < 50) {
+            health -= 0.2;
+            if (Math.random() < 0.03) playSound('hit');
+            if (health <= 0) { alert('انتهت اللعبة! حاول مرة أخرى.'); initGame(); }
         }
     });
     
     treasures.forEach(t => {
-        if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 60) {
-            t.collected = true; treasureCount++; score += 100; playSound('treasure');
+        if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 70) {
+            t.collected = true; treasureCount++; score += 200; playSound('treasure');
         }
     });
 
+    draw();
+    updateHUD();
+    gameLoop = requestAnimationFrame(update);
+}
+
+function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
     
-    // رسم الأرضية
-    ctx.fillStyle = '#c2a47c'; ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+    // رسم الأرضية البكسلية
+    ctx.fillStyle = '#c2a47c';
+    ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+    
+    // نسيج الرمل
     ctx.fillStyle = '#b3946d';
-    for(let i=0; i<WORLD_SIZE; i+=300) {
-        for(let j=0; j<WORLD_SIZE; j+=300) { if((i+j)%600 === 0) ctx.fillRect(i, j, 150, 150); }
+    for(let i=0; i<WORLD_SIZE; i+=200) {
+        for(let j=0; j<WORLD_SIZE; j+=200) {
+            if((i+j)%400 === 0) ctx.fillRect(i+20, j+20, 40, 40);
+        }
     }
     
-    // رسم الصخور
+    // رسم الصخور البكسلية
     obstacles.forEach(obs => {
         ctx.fillStyle = '#6d5a41';
-        ctx.beginPath();
-        ctx.moveTo(obs.x, obs.y + obs.size * 0.3);
-        ctx.lineTo(obs.x + obs.size * 0.4, obs.y);
-        ctx.lineTo(obs.x + obs.size, obs.y + obs.size * 0.2);
-        ctx.lineTo(obs.x + obs.size * 0.9, obs.y + obs.size);
-        ctx.lineTo(obs.x + obs.size * 0.1, obs.y + obs.size * 0.8);
-        ctx.closePath(); ctx.fill();
+        ctx.fillRect(obs.x, obs.y, obs.size, obs.size);
+        ctx.fillStyle = '#4d3f2e';
+        ctx.fillRect(obs.x + obs.size*0.6, obs.y, obs.size*0.4, obs.size);
+        ctx.fillStyle = '#8b7355';
+        ctx.fillRect(obs.x, obs.y, obs.size, obs.size*0.2);
     });
     
-    ctx.fillStyle = '#ffd700';
-    treasures.forEach(t => { if (!t.collected) { ctx.beginPath(); ctx.arc(t.x, t.y, 15, 0, Math.PI*2); ctx.fill(); } });
-    
-    enemies.forEach(enemy => {
-        drawEnemy(enemy);
+    // رسم الكنوز
+    treasures.forEach(t => {
+        if (!t.collected) {
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath(); ctx.arc(t.x, t.y, 15, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(t.x-5, t.y-5, 10, 10); // لمعة الكنز
+        }
     });
     
+    enemies.forEach(enemy => drawEnemy(enemy));
     drawPlayer();
+    
     ctx.restore();
     drawLanternEffect();
-    updateHUD();
-    gameLoop = requestAnimationFrame(update);
+}
+
+function drawPlayer() {
+    const x = player.x;
+    const y = player.y;
+    const anim = Math.sin(globalFrame * 0.5) * 4;
+    
+    ctx.save();
+    // الثوب
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(x + 10, y + 20 + anim, 40, 50 - anim);
+    // البشت البني المذهب
+    ctx.fillStyle = '#4a3728';
+    ctx.fillRect(x + 5, y + 25 + anim, 12, 45);
+    ctx.fillRect(x + 43, y + 25 + anim, 12, 45);
+    ctx.fillStyle = '#d4af37'; // تطريز ذهبي
+    ctx.fillRect(x + 14, y + 25 + anim, 3, 45);
+    ctx.fillRect(x + 43, y + 25 + anim, 3, 45);
+    // الوجه واللحية
+    ctx.fillStyle = '#f3d2b3';
+    ctx.fillRect(x + 15, y + 5 + anim, 30, 25);
+    ctx.fillStyle = '#1a1a1a'; // لحية سوداء كثيفة
+    ctx.fillRect(x + 15, y + 22 + anim, 30, 10);
+    ctx.fillRect(x + 22, y + 18 + anim, 16, 4); // شارب
+    // الشماغ والعقال
+    ctx.fillStyle = '#cc0000';
+    ctx.fillRect(x + 8, y - 5 + anim, 44, 15);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + 10, y + 2 + anim, 40, 5);
+    // السيف
+    if (isAttacking) {
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.moveTo(x+50, y+40); ctx.quadraticCurveTo(x+100, y+20, x+120, y-20); ctx.stroke();
+        ctx.fillStyle = '#d4af37'; ctx.fillRect(x+45, y+35, 15, 15);
+    } else {
+        ctx.strokeStyle = '#c0c0c0'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(x+50, y+45+anim); ctx.lineTo(x+65, y+10+anim); ctx.stroke();
+        ctx.fillStyle = '#d4af37'; ctx.fillRect(x+48, y+40+anim, 12, 8);
+    }
+    ctx.restore();
+}
+
+function drawEnemy(enemy) {
+    const x = enemy.x; const y = enemy.y;
+    const anim = Math.sin((Date.now() / 200) + (x * 0.01)) * 4;
+    ctx.save();
+    
+    if (enemy.type === 'bandit') {
+        ctx.fillStyle = '#3d2b1f'; ctx.fillRect(x+10, y+20+anim, 35, 45-anim);
+        ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x+12, y+5+anim, 30, 18); // لثام
+        ctx.fillStyle = '#f3d2b3'; ctx.fillRect(x+18, y+10+anim, 6, 4); // عيون
+        ctx.fillRect(x+30, y+10+anim, 6, 4);
+    } else if (enemy.type === 'warrior') {
+        ctx.fillStyle = '#5a4a3a'; ctx.fillRect(x+5, y+15+anim, 45, 55-anim);
+        ctx.fillStyle = '#f3d2b3'; ctx.fillRect(x+15, y+2+anim, 25, 20);
+        ctx.fillStyle = '#000'; ctx.fillRect(x+12, y+2+anim, 32, 6); // عقال
+        ctx.strokeStyle = '#777'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(x+45, y+30+anim); ctx.lineTo(x+60, y+60+anim); ctx.stroke();
+    } else { // غول
+        ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x+5, y+10+anim, 50, 65-anim);
+        ctx.fillStyle = '#ff0000'; ctx.shadowBlur = 15; ctx.shadowColor = "red";
+        ctx.fillRect(x+18, y+20+anim, 6, 6); ctx.fillRect(x+36, y+20+anim, 6, 6);
+    }
+    
+    // شريط الصحة
+    ctx.fillStyle = '#444'; ctx.fillRect(x, y-15, 50, 6);
+    ctx.fillStyle = '#00ff00'; ctx.fillRect(x, y-15, (enemy.health / (enemy.type === 'warrior' ? 100 : (enemy.type === 'ghoul' ? 150 : 60))) * 50, 6);
+    ctx.restore();
 }
 
 function drawLanternEffect() {
     ctx.save();
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const gradient = ctx.createRadialGradient(centerX, centerY, 60, centerX, centerY, 280);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+    const gradient = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 320);
+    gradient.addColorStop(0, 'rgba(255, 200, 100, 0.05)'); // توهج دافئ خفيف
+    gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.96)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 }
 
-function drawEnemy(enemy) {
-    const x = enemy.x;
-    const y = enemy.y;
-    const frameOffset = Math.sin(Date.now() / 200) * 3;
-    
-    ctx.save();
-    
-    if (enemy.type === 'bandit') {
-        // قاطع طريق ملثم
-        ctx.fillStyle = '#3d2b1f'; // ثوب غامق
-        ctx.fillRect(x + 10, y + 20 + frameOffset, 30, 45 - frameOffset);
-        ctx.fillStyle = '#000000'; // اللثام
-        ctx.fillRect(x + 12, y + 5 + frameOffset, 26, 15);
-        ctx.fillStyle = '#f3d2b3'; // العيون
-        ctx.fillRect(x + 18, y + 8 + frameOffset, 5, 3);
-        ctx.fillRect(x + 27, y + 8 + frameOffset, 5, 3);
-        ctx.fillStyle = '#555'; // خنجر
-        ctx.fillRect(x + 35, y + 35 + frameOffset, 15, 5);
-    } else if (enemy.type === 'warrior') {
-        // محارب متمرد
-        ctx.fillStyle = '#5a4a3a'; // درع جلدي
-        ctx.fillRect(x + 8, y + 15 + frameOffset, 34, 50 - frameOffset);
-        ctx.fillStyle = '#f3d2b3'; // وجه
-        ctx.fillRect(x + 15, y + 2 + frameOffset, 20, 18);
-        ctx.fillStyle = '#000'; // عقال وشعر
-        ctx.fillRect(x + 12, y + 2 + frameOffset, 26, 5);
-        ctx.fillStyle = '#777'; // سيف حديدي
-        ctx.fillRect(x + 38, y + 20 + frameOffset, 5, 30);
-    } else {
-        // الظل الصحراوي
-        ctx.fillStyle = '#1a1a1a'; // عباءة سوداء
-        ctx.fillRect(x + 5, y + 10 + frameOffset, 40, 55 - frameOffset);
-        ctx.fillStyle = '#ff0000'; // عيون حمراء متوهجة
-        ctx.fillRect(x + 15, y + 15 + frameOffset, 4, 4);
-        ctx.fillRect(x + 31, y + 15 + frameOffset, 4, 4);
-    }
-    
-    // شريط الصحة للعدو
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(x + 5, y - 10, 40, 5);
-    ctx.fillStyle = '#00ff00';
-    ctx.fillRect(x + 5, y - 10, (enemy.health / (enemy.type === 'warrior' ? 80 : 50)) * 40, 5);
-    
-    ctx.restore();
-}
-
-function drawPlayer() {
-    const x = player.x;
-    const y = player.y;
-    const frameOffset = player.moving ? Math.sin(playerFrame * 0.8) * 5 : Math.sin(playerFrame * 0.5) * 2;
-    
-    ctx.save();
-    
-    // 1. الثوب الأبيض (مع أنيميشن الحركة)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(x + 10, y + 20 + frameOffset, 40, 50 - frameOffset);
-    
-    // 2. البشت البني (التصميم الجديد)
-    ctx.fillStyle = '#4a3728';
-    ctx.fillRect(x + 5, y + 25 + frameOffset, 10, 40); // الجانب الأيسر
-    ctx.fillRect(x + 45, y + 25 + frameOffset, 10, 40); // الجانب الأيمن
-    
-    // تطريز ذهبي على البشت
-    ctx.fillStyle = '#d4af37';
-    ctx.fillRect(x + 12, y + 25 + frameOffset, 3, 40);
-    ctx.fillRect(x + 45, y + 25 + frameOffset, 3, 40);
-    
-    // 3. الرأس واللحية
-    ctx.fillStyle = '#f3d2b3'; // لون البشرة
-    ctx.fillRect(x + 15, y + 5 + frameOffset, 30, 25);
-    
-    ctx.fillStyle = '#2a1f18'; // اللحية السوداء
-    ctx.fillRect(x + 15, y + 20 + frameOffset, 30, 10);
-    ctx.fillRect(x + 25, y + 15 + frameOffset, 10, 5); // الشارب
-    
-    // 4. الشماغ الأحمر والعقال
-    ctx.fillStyle = '#ff0000'; // الشماغ
-    ctx.fillRect(x + 10, y - 5 + frameOffset, 40, 15);
-    ctx.fillStyle = '#ffffff'; // تفاصيل الشماغ
-    ctx.fillRect(x + 15, y - 2 + frameOffset, 30, 2);
-    
-    ctx.fillStyle = '#000000'; // العقال
-    ctx.fillRect(x + 12, y + 2 + frameOffset, 36, 4);
-    
-    // 5. السيف (تصميم احترافي)
-    if (isAttacking) {
-        ctx.strokeStyle = '#c0c0c0'; // نصل السيف
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(x + 50, y + 40);
-        ctx.quadraticCurveTo(x + 90, y + 20, x + 110, y - 10);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#d4af37'; // مقبض السيف الذهبي
-        ctx.fillRect(x + 45, y + 35, 15, 10);
-    } else {
-        // السيف في وضع الراحة
-        ctx.strokeStyle = '#c0c0c0';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(x + 50, y + 40 + frameOffset);
-        ctx.lineTo(x + 60, y + 10 + frameOffset);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#d4af37';
-        ctx.fillRect(x + 48, y + 38 + frameOffset, 10, 6);
-    }
-    
-    ctx.restore();
-}
-
 function updateHUD() {
-    const scoreEl = document.getElementById('score');
-    const treasureEl = document.getElementById('treasureCount');
-    const healthEl = document.getElementById('healthFill');
-    if (scoreEl) scoreEl.textContent = score;
-    if (treasureEl) treasureEl.textContent = treasureCount;
-    if (healthEl) healthEl.style.width = health + '%';
+    document.getElementById('score').textContent = score;
+    document.getElementById('treasureCount').textContent = treasureCount;
+    document.getElementById('healthFill').style.width = health + '%';
 }

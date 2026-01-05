@@ -1,8 +1,14 @@
 // متغيرات اللعبة
 let canvas, ctx;
 let player, enemies = [], treasures = [], obstacles = [];
+let score = 0, level = 1, health = 100, treasureCount = 0;
+let keys = {};
+let gameLoop;
+let isPaused = false;
+let isAttacking = false;
+let attackCooldown = 0;
 
-// المؤثرات الصوتية
+// المؤثرات الصوتية (تحميل آمن)
 const sounds = {
     sword: new Audio('https://assets.mixkit.co/active_storage/sfx/2190/2190-preview.mp3'),
     treasure: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
@@ -10,17 +16,15 @@ const sounds = {
 };
 
 function playSound(name) {
-    if (sounds[name]) {
-        sounds[name].currentTime = 0;
-        sounds[name].play().catch(e => console.log("Audio play failed:", e));
+    try {
+        if (sounds[name]) {
+            sounds[name].currentTime = 0;
+            sounds[name].play().catch(e => console.log("Audio play blocked until user interaction"));
+        }
+    } catch (e) {
+        console.log("Sound error:", e);
     }
 }
-let score = 0, level = 1, health = 100, treasureCount = 0;
-let keys = {};
-let gameLoop;
-let isPaused = false;
-let isAttacking = false;
-let attackCooldown = 0;
 
 // نظام الكاميرا
 let camera = { x: 0, y: 0 };
@@ -46,12 +50,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('resize', resizeCanvas);
     }
     
+    // تهيئة الجويستيك فوراً
     initJoystick();
     
     const btnAttack = document.getElementById('btnAttack');
     if (btnAttack) {
         btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); keys['attack'] = true; });
         btnAttack.addEventListener('touchend', (e) => { e.preventDefault(); keys['attack'] = false; });
+        btnAttack.addEventListener('mousedown', (e) => { keys['attack'] = true; });
+        btnAttack.addEventListener('mouseup', (e) => { keys['attack'] = false; });
     }
 
     document.addEventListener('keydown', (e) => { keys[e.key] = true; });
@@ -63,7 +70,10 @@ function initJoystick() {
     const stick = document.getElementById('joystickStick');
     const base = document.getElementById('joystickBase');
     
-    if (!container || !stick || !base) return;
+    if (!container || !stick || !base) {
+        console.error("Joystick elements not found!");
+        return;
+    }
 
     const handleStart = (e) => {
         e.preventDefault();
@@ -77,7 +87,6 @@ function initJoystick() {
 
     const handleMove = (e) => {
         if (!joystick.active) return;
-        e.preventDefault();
         const touch = e.touches ? e.touches[0] : e;
         
         let dx = touch.clientX - joystick.baseX;
@@ -107,11 +116,10 @@ function initJoystick() {
         stick.style.transform = `translate(0px, 0px)`;
     };
 
-    container.addEventListener('touchstart', handleStart);
+    container.addEventListener('touchstart', handleStart, { passive: false });
     window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
     
-    // دعم الماوس للتجربة
     container.addEventListener('mousedown', handleStart);
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
@@ -127,6 +135,9 @@ function resizeCanvas() {
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+    if (screenId === 'gameScreen') {
+        setTimeout(resizeCanvas, 100);
+    }
 }
 
 function startGame() {
@@ -158,13 +169,11 @@ function update() {
     let moveX = 0;
     let moveY = 0;
     
-    // حركة لوحة المفاتيح
     if (keys['ArrowRight'] || keys['d']) moveX = 1;
     if (keys['ArrowLeft'] || keys['a']) moveX = -1;
     if (keys['ArrowDown'] || keys['s']) moveY = 1;
     if (keys['ArrowUp'] || keys['w']) moveY = -1;
     
-    // حركة الجويستيك (تغطي على لوحة المفاتيح إذا كانت نشطة)
     if (joystick.active) {
         moveX = joystick.inputX;
         moveY = joystick.inputY;
@@ -173,7 +182,6 @@ function update() {
     let nextX = player.x + moveX * player.speed;
     let nextY = player.y + moveY * player.speed;
     
-    // فحص التصادم
     let canMoveX = true;
     let canMoveY = true;
     obstacles.forEach(obs => {
@@ -192,7 +200,7 @@ function update() {
     if ((keys[' '] || keys['attack']) && attackCooldown <= 0) {
         isAttacking = true;
         attackCooldown = 20;
-        playSound('sword'); // تشغيل صوت السيف
+        playSound('sword');
         setTimeout(() => isAttacking = false, 150);
         enemies.forEach((enemy, index) => {
             if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 100) {
@@ -211,17 +219,15 @@ function update() {
         }
         if (dist < 40) {
             health -= 0.1;
-            if (Math.random() < 0.05) playSound('hit'); // تشغيل صوت الضرر أحياناً
+            if (Math.random() < 0.05) playSound('hit');
             if (health <= 0) { alert('انتهت اللعبة!'); initGame(); }
         }
     });
     
     treasures.forEach(t => {
         if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 50) {
-            t.collected = true; 
-            treasureCount++; 
-            score += 100;
-            playSound('treasure'); // تشغيل صوت الكنز
+            t.collected = true; treasureCount++; score += 100;
+            playSound('treasure');
         }
     });
 
@@ -279,7 +285,10 @@ function drawPlayer() {
 }
 
 function updateHUD() {
-    document.getElementById('score').textContent = score;
-    document.getElementById('treasureCount').textContent = treasureCount;
-    document.getElementById('healthFill').style.width = health + '%';
+    const scoreEl = document.getElementById('score');
+    const treasureEl = document.getElementById('treasureCount');
+    const healthEl = document.getElementById('healthFill');
+    if (scoreEl) scoreEl.textContent = score;
+    if (treasureEl) treasureEl.textContent = treasureCount;
+    if (healthEl) healthEl.style.width = health + '%';
 }

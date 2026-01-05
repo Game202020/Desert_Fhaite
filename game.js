@@ -7,6 +7,8 @@ let gameLoop;
 let isPaused = false;
 let isAttacking = false;
 let attackCooldown = 0;
+let damageFlash = 0; // مؤقت وميض الضرر
+let screenShake = 0; // مؤقت اهتزاز الشاشة
 
 // أنيميشن اللاعب والأعداء
 let globalFrame = 0;
@@ -177,6 +179,8 @@ function update() {
         }
         if (dist < 50) {
             health -= 0.2;
+            damageFlash = 10; // تفعيل الوميض الأحمر
+            screenShake = 5;  // تفعيل اهتزاز الشاشة
             if (Math.random() < 0.03) playSound('hit');
             if (health <= 0) { alert('انتهت اللعبة! حاول مرة أخرى.'); initGame(); }
         }
@@ -196,6 +200,13 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
+    
+    // تطبيق اهتزاز الشاشة
+    if (screenShake > 0) {
+        ctx.translate(Math.random() * screenShake - screenShake/2, Math.random() * screenShake - screenShake/2);
+        screenShake--;
+    }
+    
     ctx.translate(-camera.x, -camera.y);
     
     // رسم الأرضية البكسلية
@@ -235,6 +246,13 @@ function draw() {
     
     ctx.restore();
     drawLanternEffect();
+    
+    // رسم وميض الضرر الأحمر على كامل الشاشة
+    if (damageFlash > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${damageFlash * 0.05})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        damageFlash--;
+    }
 }
 
 function drawPlayer() {

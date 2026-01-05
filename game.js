@@ -1,6 +1,6 @@
 // متغيرات اللعبة
 let canvas, ctx;
-let player, enemies = [], treasures = [], obstacles = [];
+let player, enemies = [], treasures = [], obstacles = [], healthPacks = [];
 let score = 0, level = 1, health = 100, treasureCount = 0;
 let keys = {};
 let gameLoop;
@@ -26,7 +26,8 @@ let frameCounter = 0;
 const sounds = {
     sword: new Audio('https://assets.mixkit.co/active_storage/sfx/2190/2190-preview.mp3'),
     treasure: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
-    hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2593/2593-preview.mp3')
+    hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2593/2593-preview.mp3'),
+    heal: new Audio('https://assets.mixkit.co/active_storage/sfx/619/619-preview.mp3')
 };
 
 function playSound(name) {
@@ -139,7 +140,7 @@ function startGame() {
 
 function initGame() {
     score = 0; health = 100; treasureCount = 0;
-    enemies = []; treasures = []; obstacles = [];
+    enemies = []; treasures = []; obstacles = []; healthPacks = [];
     player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 60, height: 80, speed: gameSettings.playerSpeed, moving: false };
     
     // تعديل الصعوبة
@@ -152,6 +153,9 @@ function initGame() {
     
     // توليد كنوز
     for (let i = 0; i < 50; i++) treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
+    
+    // توليد صناديق علاج
+    for (let i = 0; i < 15; i++) healthPacks.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
     
     // توليد أعداء متنوعين (اللص، السياف، الغول)
     const types = ['bandit', 'warrior', 'ghoul'];
@@ -232,6 +236,15 @@ function update() {
             t.collected = true; treasureCount++; score += 200; playSound('treasure');
         }
     });
+    
+    healthPacks.forEach(hp => {
+        if (!hp.collected && Math.hypot(hp.x - player.x, hp.y - player.y) < 70) {
+            hp.collected = true;
+            health = Math.min(100, health + 25); // زيادة الصحة بنسبة 25%
+            playSound('heal');
+            damageFlash = -10; // وميض أخضر (قيمة سالبة للتمييز)
+        }
+    });
 
     draw();
     updateHUD();
@@ -282,17 +295,32 @@ function draw() {
         }
     });
     
+    // رسم صناديق العلاج
+    healthPacks.forEach(hp => {
+        if (!hp.collected) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(hp.x - 15, hp.y - 15, 30, 30);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(hp.x - 10, hp.y - 2, 20, 4); // علامة +
+            ctx.fillRect(hp.x - 2, hp.y - 10, 4, 20);
+        }
+    });
+    
     enemies.forEach(enemy => drawEnemy(enemy));
     drawPlayer();
     
     ctx.restore();
     drawLanternEffect();
     
-    // رسم وميض الضرر الأحمر على كامل الشاشة
+    // رسم وميض الضرر الأحمر أو العلاج الأخضر
     if (damageFlash > 0) {
         ctx.fillStyle = `rgba(255, 0, 0, ${damageFlash * 0.05})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         damageFlash--;
+    } else if (damageFlash < 0) {
+        ctx.fillStyle = `rgba(0, 255, 0, ${Math.abs(damageFlash) * 0.05})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        damageFlash++;
     }
 }
 

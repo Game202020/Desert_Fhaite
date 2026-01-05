@@ -109,7 +109,22 @@ function initGame() {
     player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 60, height: 80, speed: 5, moving: false };
     for (let i = 0; i < 80; i++) obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 60 });
     for (let i = 0; i < 40; i++) treasures.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, collected: false });
-    for (let i = 0; i < 15; i++) enemies.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, health: 50, speed: 2 });
+    
+    // إنشاء أعداء بأنواع مختلفة
+    const enemyTypes = ['bandit', 'warrior', 'shadow'];
+    for (let i = 0; i < 20; i++) {
+        const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        enemies.push({
+            x: Math.random() * WORLD_SIZE,
+            y: Math.random() * WORLD_SIZE,
+            type: type,
+            health: type === 'warrior' ? 80 : 50,
+            speed: type === 'bandit' ? 2.5 : 1.5,
+            width: 50,
+            height: 70,
+            frame: 0
+        });
+    }
 }
 
 function update() {
@@ -189,8 +204,9 @@ function update() {
     ctx.fillStyle = '#ffd700';
     treasures.forEach(t => { if (!t.collected) { ctx.beginPath(); ctx.arc(t.x, t.y, 15, 0, Math.PI*2); ctx.fill(); } });
     
-    ctx.fillStyle = '#5c0000';
-    enemies.forEach(enemy => { ctx.fillRect(enemy.x, enemy.y, 40, 40); });
+    enemies.forEach(enemy => {
+        drawEnemy(enemy);
+    });
     
     drawPlayer();
     ctx.restore();
@@ -208,6 +224,52 @@ function drawLanternEffect() {
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+}
+
+function drawEnemy(enemy) {
+    const x = enemy.x;
+    const y = enemy.y;
+    const frameOffset = Math.sin(Date.now() / 200) * 3;
+    
+    ctx.save();
+    
+    if (enemy.type === 'bandit') {
+        // قاطع طريق ملثم
+        ctx.fillStyle = '#3d2b1f'; // ثوب غامق
+        ctx.fillRect(x + 10, y + 20 + frameOffset, 30, 45 - frameOffset);
+        ctx.fillStyle = '#000000'; // اللثام
+        ctx.fillRect(x + 12, y + 5 + frameOffset, 26, 15);
+        ctx.fillStyle = '#f3d2b3'; // العيون
+        ctx.fillRect(x + 18, y + 8 + frameOffset, 5, 3);
+        ctx.fillRect(x + 27, y + 8 + frameOffset, 5, 3);
+        ctx.fillStyle = '#555'; // خنجر
+        ctx.fillRect(x + 35, y + 35 + frameOffset, 15, 5);
+    } else if (enemy.type === 'warrior') {
+        // محارب متمرد
+        ctx.fillStyle = '#5a4a3a'; // درع جلدي
+        ctx.fillRect(x + 8, y + 15 + frameOffset, 34, 50 - frameOffset);
+        ctx.fillStyle = '#f3d2b3'; // وجه
+        ctx.fillRect(x + 15, y + 2 + frameOffset, 20, 18);
+        ctx.fillStyle = '#000'; // عقال وشعر
+        ctx.fillRect(x + 12, y + 2 + frameOffset, 26, 5);
+        ctx.fillStyle = '#777'; // سيف حديدي
+        ctx.fillRect(x + 38, y + 20 + frameOffset, 5, 30);
+    } else {
+        // الظل الصحراوي
+        ctx.fillStyle = '#1a1a1a'; // عباءة سوداء
+        ctx.fillRect(x + 5, y + 10 + frameOffset, 40, 55 - frameOffset);
+        ctx.fillStyle = '#ff0000'; // عيون حمراء متوهجة
+        ctx.fillRect(x + 15, y + 15 + frameOffset, 4, 4);
+        ctx.fillRect(x + 31, y + 15 + frameOffset, 4, 4);
+    }
+    
+    // شريط الصحة للعدو
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(x + 5, y - 10, 40, 5);
+    ctx.fillStyle = '#00ff00';
+    ctx.fillRect(x + 5, y - 10, (enemy.health / (enemy.type === 'warrior' ? 80 : 50)) * 40, 5);
+    
     ctx.restore();
 }
 

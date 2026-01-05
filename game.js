@@ -1,6 +1,20 @@
 // متغيرات اللعبة
 let canvas, ctx;
 let player, enemies = [], treasures = [], obstacles = [];
+
+// المؤثرات الصوتية
+const sounds = {
+    sword: new Audio('https://assets.mixkit.co/active_storage/sfx/2190/2190-preview.mp3'),
+    treasure: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
+    hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2593/2593-preview.mp3')
+};
+
+function playSound(name) {
+    if (sounds[name]) {
+        sounds[name].currentTime = 0;
+        sounds[name].play().catch(e => console.log("Audio play failed:", e));
+    }
+}
 let score = 0, level = 1, health = 100, treasureCount = 0;
 let keys = {};
 let gameLoop;
@@ -178,6 +192,7 @@ function update() {
     if ((keys[' '] || keys['attack']) && attackCooldown <= 0) {
         isAttacking = true;
         attackCooldown = 20;
+        playSound('sword'); // تشغيل صوت السيف
         setTimeout(() => isAttacking = false, 150);
         enemies.forEach((enemy, index) => {
             if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 100) {
@@ -196,13 +211,17 @@ function update() {
         }
         if (dist < 40) {
             health -= 0.1;
+            if (Math.random() < 0.05) playSound('hit'); // تشغيل صوت الضرر أحياناً
             if (health <= 0) { alert('انتهت اللعبة!'); initGame(); }
         }
     });
     
     treasures.forEach(t => {
         if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 50) {
-            t.collected = true; treasureCount++; score += 100;
+            t.collected = true; 
+            treasureCount++; 
+            score += 100;
+            playSound('treasure'); // تشغيل صوت الكنز
         }
     });
 

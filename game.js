@@ -23,41 +23,32 @@ let settings = {
 };
 
 // ثوابت اللعبة
-const LANTERN_RADIUS = 150; // نطاق المصباح
-const PLAYER_SIZE = 32;
-const ENEMY_SIZE = 24;
-const TREASURE_SIZE = 16;
+const LANTERN_RADIUS = 180; // زيادة نطاق المصباح قليلاً
+const PLAYER_SIZE = 40;
+const ENEMY_SIZE = 30;
+const TREASURE_SIZE = 20;
 
 // تهيئة اللعبة عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-    // تهيئة Canvas
     canvas = document.getElementById('gameCanvas');
     if (canvas) {
         ctx = canvas.getContext('2d');
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
     }
-    
-    // تهيئة الإعدادات
     initSettings();
     
-    // التحكم بلوحة المفاتيح
     document.addEventListener('keydown', (e) => {
         keys[e.key] = true;
-        if (e.key === 'Escape') {
-            pauseGame();
-        }
+        if (e.key === 'Escape') pauseGame();
     });
-    
     document.addEventListener('keyup', (e) => {
         keys[e.key] = false;
     });
     
-    // تهيئة أزرار اللمس للجوال
     initTouchControls();
 });
 
-// تغيير حجم Canvas
 function resizeCanvas() {
     if (canvas) {
         canvas.width = canvas.offsetWidth;
@@ -65,178 +56,76 @@ function resizeCanvas() {
     }
 }
 
-// تهيئة الإعدادات
 function initSettings() {
     const volumeSlider = document.getElementById('volumeSlider');
     const volumeValue = document.getElementById('volumeValue');
-    
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
             settings.volume = this.value;
             volumeValue.textContent = this.value + '%';
         });
     }
-    
-    const difficultySelect = document.getElementById('difficultySelect');
-    if (difficultySelect) {
-        difficultySelect.addEventListener('change', function() {
-            settings.difficulty = this.value;
-        });
-    }
-    
-    const soundCheck = document.getElementById('soundCheck');
-    if (soundCheck) {
-        soundCheck.addEventListener('change', function() {
-            settings.sound = this.checked;
-        });
-    }
 }
 
-// تهيئة أزرار التحكم باللمس
 function initTouchControls() {
-    const btnLeft = document.getElementById('btnLeft');
-    const btnRight = document.getElementById('btnRight');
-    const btnUp = document.getElementById('btnUp');
-    const btnDown = document.getElementById('btnDown');
-    const btnAttack = document.getElementById('btnAttack');
-    
-    if (btnLeft) {
-        btnLeft.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.left = true;
-        });
-        btnLeft.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.left = false;
-        });
-    }
-    
-    if (btnRight) {
-        btnRight.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.right = true;
-        });
-        btnRight.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.right = false;
-        });
-    }
-    
-    if (btnUp) {
-        btnUp.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.up = true;
-        });
-        btnUp.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.up = false;
-        });
-    }
-    
-    if (btnDown) {
-        btnDown.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.down = true;
-        });
-        btnDown.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.down = false;
-        });
-    }
-    
-    if (btnAttack) {
-        btnAttack.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.attack = true;
-        });
-        btnAttack.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.attack = false;
-        });
-    }
+    const controls = ['btnLeft', 'btnRight', 'btnUp', 'btnDown', 'btnAttack'];
+    controls.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            const action = id.replace('btn', '').toLowerCase();
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchControls[action] = true;
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touchControls[action] = false;
+            });
+        }
+    });
 }
 
-// التنقل بين الشاشات
 function showScreen(screenId) {
-    const screens = document.querySelectorAll('.screen');
-    screens.forEach(screen => screen.classList.remove('active'));
-    
-    const targetScreen = document.getElementById(screenId);
-    if (targetScreen) {
-        targetScreen.classList.add('active');
-    }
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
 }
 
 function startGame() {
     showScreen('gameScreen');
     initGame();
-    if (gameLoop) {
-        cancelAnimationFrame(gameLoop);
-    }
+    if (gameLoop) cancelAnimationFrame(gameLoop);
     gameLoop = requestAnimationFrame(update);
-}
-
-function showInstructions() {
-    showScreen('instructionsScreen');
-}
-
-function showSettings() {
-    showScreen('settingsScreen');
-}
-
-function showAbout() {
-    showScreen('aboutScreen');
 }
 
 function backToMenu() {
     showScreen('mainMenu');
-    if (gameLoop) {
-        cancelAnimationFrame(gameLoop);
-    }
-    isPaused = false;
+    if (gameLoop) cancelAnimationFrame(gameLoop);
 }
 
 function pauseGame() {
     isPaused = !isPaused;
-    if (!isPaused && gameLoop) {
-        gameLoop = requestAnimationFrame(update);
-    }
+    if (!isPaused) gameLoop = requestAnimationFrame(update);
 }
 
-// تهيئة اللعبة
 function initGame() {
-    score = 0;
-    level = 1;
-    health = 100;
-    treasureCount = 0;
-    enemies = [];
-    treasures = [];
-    particles = [];
+    score = 0; level = 1; health = 100; treasureCount = 0;
+    enemies = []; treasures = []; particles = [];
     
-    // إنشاء اللاعب
     player = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
+        x: canvas.width / 2 - PLAYER_SIZE / 2,
+        y: canvas.height / 2 - PLAYER_SIZE / 2,
         width: PLAYER_SIZE,
         height: PLAYER_SIZE,
-        speed: 4,
-        direction: 0, // 0: يمين، 1: أسفل، 2: يسار، 3: أعلى
-        health: 100
+        speed: 5,
+        direction: 0
     };
     
-    // إنشاء الكنوز
     createTreasures();
-    
-    // إنشاء أعداء
     createEnemies();
-    
-    updateHUD();
 }
 
-// إنشاء الكنوز
 function createTreasures() {
-    const treasureCount = 8 + level * 2;
-    for (let i = 0; i < treasureCount; i++) {
+    for (let i = 0; i < 10 + level * 2; i++) {
         treasures.push({
             x: Math.random() * (canvas.width - TREASURE_SIZE),
             y: Math.random() * (canvas.height - TREASURE_SIZE),
@@ -247,415 +136,216 @@ function createTreasures() {
     }
 }
 
-// إنشاء الأعداء
 function createEnemies() {
-    const enemyCount = 3 + level * 2;
-    for (let i = 0; i < enemyCount; i++) {
+    for (let i = 0; i < 4 + level; i++) {
         enemies.push({
-            x: Math.random() * (canvas.width - ENEMY_SIZE),
-            y: Math.random() * (canvas.height - ENEMY_SIZE),
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
             width: ENEMY_SIZE,
             height: ENEMY_SIZE,
-            speed: 1.5 + (level * 0.3),
-            health: 30 + (level * 10),
-            maxHealth: 30 + (level * 10),
-            targetX: 0,
-            targetY: 0,
-            updateTarget: 0
+            speed: 1 + Math.random() * 1.5,
+            health: 50,
+            maxHealth: 50
         });
     }
 }
 
-// تحديث اللعبة
 function update() {
     if (isPaused) return;
     
-    // مسح الشاشة
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // تحديث اللاعب
+    // 1. تحديث المنطق
     updatePlayer();
-    
-    // تحديث الأعداء
     updateEnemies();
-    
-    // تحديث الجزيئات
     updateParticles();
-    
-    // فحص التصادمات
     checkCollisions();
     
-    // رسم البيئة المظلمة
-    drawDarkEnvironment();
+    // 2. الرسم (الترتيب مهم جداً)
     
-    // رسم الكنوز (فقط داخل نطاق المصباح)
+    // أ. رسم الخلفية الرملية (دائماً ظاهرة لكن معتمة)
+    ctx.fillStyle = '#2c1e14'; // لون رملي غامق جداً للصحراء في الليل
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // ب. رسم الكنوز والأعداء (سيتم تغطيتهم بالظلام لاحقاً إلا في منطقة الضوء)
     drawTreasures();
-    
-    // رسم الأعداء (فقط داخل نطاق المصباح)
     drawEnemies();
-    
-    // رسم الجزيئات
     drawParticles();
     
-    // رسم اللاعب والمصباح
+    // ج. رسم الظلام مع فتحة المصباح (نظام القناع)
+    drawFogOfWar();
+    
+    // د. رسم اللاعب (فوق الظلام لضمان ظهوره دائماً)
     drawPlayer();
     
-    // تحديث واجهة المستخدم
     updateHUD();
-    
-    // الاستمرار في الحلقة
     gameLoop = requestAnimationFrame(update);
 }
 
-// رسم البيئة المظلمة مع المصباح
-function drawDarkEnvironment() {
-    // الظلام الكامل
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function drawFogOfWar() {
+    ctx.save();
+    ctx.beginPath();
+    // رسم مستطيل يغطي الشاشة بالكامل
+    ctx.rect(0, 0, canvas.width, canvas.height);
     
-    // إضاءة المصباح (Radial Gradient)
-    const gradient = ctx.createRadialGradient(
-        player.x + player.width / 2, 
-        player.y + player.height / 2, 
-        0,
-        player.x + player.width / 2, 
-        player.y + player.height / 2, 
-        LANTERN_RADIUS
+    // رسم دائرة المصباح (عكسية)
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, LANTERN_RADIUS, 0, Math.PI * 2, true);
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.92)'; // درجة الظلام
+    ctx.fill();
+    ctx.restore();
+    
+    // إضافة توهج حول حافة المصباح
+    const grad = ctx.createRadialGradient(
+        player.x + player.width / 2, player.y + player.height / 2, LANTERN_RADIUS - 50,
+        player.x + player.width / 2, player.y + player.height / 2, LANTERN_RADIUS
     );
-    
-    gradient.addColorStop(0, 'rgba(255, 200, 0, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.4)');
-    gradient.addColorStop(1, 'rgba(100, 50, 0, 0)');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(
-        player.x + player.width / 2 - LANTERN_RADIUS,
-        player.y + player.height / 2 - LANTERN_RADIUS,
-        LANTERN_RADIUS * 2,
-        LANTERN_RADIUS * 2
-    );
+    grad.addColorStop(0, 'rgba(255, 200, 0, 0)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.92)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, LANTERN_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
 }
 
-// تحديث اللاعب
 function updatePlayer() {
-    let moveX = 0;
-    let moveY = 0;
+    if (keys['ArrowRight'] || keys['d'] || touchControls.right) player.x += player.speed;
+    if (keys['ArrowLeft'] || keys['a'] || touchControls.left) player.x -= player.speed;
+    if (keys['ArrowDown'] || keys['s'] || touchControls.down) player.y += player.speed;
+    if (keys['ArrowUp'] || keys['w'] || touchControls.up) player.y -= player.speed;
     
-    // الحركة الأفقية
-    if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchControls.right) {
-        moveX = 1;
-        player.direction = 0;
-    }
-    if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchControls.left) {
-        moveX = -1;
-        player.direction = 2;
-    }
+    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     
-    // الحركة العمودية
-    if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchControls.down) {
-        moveY = 1;
-        player.direction = 1;
+    if ((keys[' '] || keys['e'] || touchControls.attack) && attackCooldown <= 0) {
+        performAttack();
+        attackCooldown = 20;
     }
-    if (keys['ArrowUp'] || keys['w'] || keys['W'] || touchControls.up) {
-        moveY = -1;
-        player.direction = 3;
-    }
-    
-    // تطبيق الحركة
-    player.x += moveX * player.speed;
-    player.y += moveY * player.speed;
-    
-    // الحد من الحركة
-    if (player.x < 0) player.x = 0;
-    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    if (player.y < 0) player.y = 0;
-    if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
-    
-    // الهجوم
-    if (keys[' '] || keys['e'] || keys['E'] || touchControls.attack) {
-        if (attackCooldown <= 0) {
-            performAttack();
-            attackCooldown = 30; // 30 frame cooldown
-        }
-    }
-    
-    // تقليل cooldown الهجوم
-    if (attackCooldown > 0) {
-        attackCooldown--;
-    }
+    if (attackCooldown > 0) attackCooldown--;
 }
 
-// تنفيذ الهجوم
 function performAttack() {
     isAttacking = true;
-    
-    // فحص الأعداء في نطاق الهجوم
-    const attackRange = 60;
     enemies.forEach((enemy, index) => {
-        const dx = (enemy.x + enemy.width / 2) - (player.x + player.width / 2);
-        const dy = (enemy.y + enemy.height / 2) - (player.y + player.height / 2);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < attackRange) {
+        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        if (dist < 80) {
             enemy.health -= 25;
-            
-            // إنشاء جزيئات دم
-            for (let i = 0; i < 5; i++) {
-                particles.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: (Math.random() - 0.5) * 4,
-                    life: 20,
-                    color: '#ff4444'
-                });
-            }
-            
             if (enemy.health <= 0) {
                 enemies.splice(index, 1);
                 score += 50;
-                
-                // إنشاء جزيئات عند هزيمة العدو
-                for (let i = 0; i < 10; i++) {
-                    particles.push({
-                        x: enemy.x + enemy.width / 2,
-                        y: enemy.y + enemy.height / 2,
-                        vx: (Math.random() - 0.5) * 6,
-                        vy: (Math.random() - 0.5) * 6,
-                        life: 30,
-                        color: '#ffaa00'
-                    });
-                }
             }
         }
     });
-    
-    setTimeout(() => {
-        isAttacking = false;
-    }, 200);
+    setTimeout(() => isAttacking = false, 150);
 }
 
-// تحديث الأعداء
 function updateEnemies() {
     enemies.forEach(enemy => {
-        // تحديث الهدف كل 60 frame
-        enemy.updateTarget--;
-        if (enemy.updateTarget <= 0) {
-            enemy.targetX = Math.random() * canvas.width;
-            enemy.targetY = Math.random() * canvas.height;
-            enemy.updateTarget = 60;
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.hypot(dx, dy);
+        
+        // الأعداء يطاردون اللاعب فقط إذا كان قريباً (داخل نطاق المصباح)
+        if (dist < LANTERN_RADIUS + 50) {
+            enemy.x += (dx / dist) * enemy.speed;
+            enemy.y += (dy / dist) * enemy.speed;
         }
-        
-        // الحركة نحو الهدف
-        const dx = enemy.targetX - (enemy.x + enemy.width / 2);
-        const dy = enemy.targetY - (enemy.y + enemy.height / 2);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 0) {
-            enemy.x += (dx / distance) * enemy.speed;
-            enemy.y += (dy / distance) * enemy.speed;
-        }
-        
-        // الحد من الحركة
-        if (enemy.x < 0) enemy.x = 0;
-        if (enemy.x > canvas.width - enemy.width) enemy.x = canvas.width - enemy.width;
-        if (enemy.y < 0) enemy.y = 0;
-        if (enemy.y > canvas.height - enemy.height) enemy.y = canvas.height - enemy.height;
     });
 }
 
-// رسم اللاعب (شخصية سعودية بكسل آرت)
 function drawPlayer() {
     const x = player.x;
     const y = player.y;
-    const size = player.width;
     
-    // الجسم (بني)
-    ctx.fillStyle = '#8B4513';
-    ctx.fillRect(x + 8, y + 12, 16, 16);
-    
-    // الرأس (بني فاتح)
-    ctx.fillStyle = '#D2691E';
-    ctx.fillRect(x + 10, y + 2, 12, 10);
-    
-    // الغترة (بيضاء)
+    // رسم الشخصية السعودية (بكسل آرت مبسط)
+    // الثوب (أبيض)
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(x + 6, y - 2, 20, 6);
+    ctx.fillRect(x + 10, y + 10, 20, 25);
     
-    // العيون
-    ctx.fillStyle = '#000';
-    ctx.fillRect(x + 11, y + 4, 2, 2);
-    ctx.fillRect(x + 19, y + 4, 2, 2);
+    // الرأس
+    ctx.fillStyle = '#f3d2b3';
+    ctx.fillRect(x + 12, y, 16, 12);
     
-    // السيف (إذا كان يهاجم)
+    // الغترة (حمراء وبيضاء - شماغ)
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(x + 10, y - 4, 20, 6);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + 12, y - 2, 16, 2);
+    
+    // العقال (أسود)
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + 11, y - 1, 18, 2);
+    
+    // السيف عند الهجوم
     if (isAttacking) {
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#e5e5e5';
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(x + 24, y + 8);
-        ctx.lineTo(x + 40, y + 8);
+        ctx.moveTo(x + 20, y + 20);
+        ctx.lineTo(x + 50, y + 10);
         ctx.stroke();
     }
 }
 
-// رسم الأعداء
 function drawEnemies() {
     enemies.forEach(enemy => {
-        // فحص إذا كان العدو داخل نطاق المصباح
-        const dx = (enemy.x + enemy.width / 2) - (player.x + player.width / 2);
-        const dy = (enemy.y + enemy.height / 2) - (player.y + player.height / 2);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < LANTERN_RADIUS) {
-            // الجسم (أحمر)
-            ctx.fillStyle = '#FF4444';
-            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-            
-            // العيون (أبيض)
-            ctx.fillStyle = '#FFF';
-            ctx.fillRect(enemy.x + 4, enemy.y + 4, 3, 3);
-            ctx.fillRect(enemy.x + enemy.width - 7, enemy.y + 4, 3, 3);
-            
-            // شريط الصحة
-            const healthBarWidth = enemy.width;
-            const healthPercent = enemy.health / enemy.maxHealth;
-            
-            ctx.fillStyle = '#333';
-            ctx.fillRect(enemy.x, enemy.y - 8, healthBarWidth, 4);
-            
-            ctx.fillStyle = healthPercent > 0.5 ? '#00FF00' : '#FF6600';
-            ctx.fillRect(enemy.x, enemy.y - 8, healthBarWidth * healthPercent, 4);
-        }
+        ctx.fillStyle = '#5c0000';
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        // عيون حمراء متوهجة
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(enemy.x + 5, enemy.y + 5, 4, 4);
+        ctx.fillRect(enemy.x + enemy.width - 9, enemy.y + 5, 4, 4);
     });
 }
 
-// رسم الكنوز
 function drawTreasures() {
-    treasures.forEach((treasure, index) => {
-        if (!treasure.collected) {
-            // فحص إذا كان الكنز داخل نطاق المصباح
-            const dx = (treasure.x + treasure.width / 2) - (player.x + player.width / 2);
-            const dy = (treasure.y + treasure.height / 2) - (player.y + player.height / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < LANTERN_RADIUS) {
-                // الكنز (ذهبي)
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(treasure.x, treasure.y, treasure.width, treasure.height);
-                
-                // توهج
-                const glow = Math.sin(Date.now() / 200) * 2 + 3;
-                ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(treasure.x - glow, treasure.y - glow, treasure.width + glow * 2, treasure.height + glow * 2);
-            }
+    treasures.forEach(t => {
+        if (!t.collected) {
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(t.x + 10, t.y + 10, 8, 0, Math.PI * 2);
+            ctx.fill();
+            // بريق
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(t.x + 8, t.y + 6, 4, 4);
         }
     });
 }
 
-// تحديث الجزيئات
 function updateParticles() {
-    particles = particles.filter(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.1; // الجاذبية
-        p.life--;
-        return p.life > 0;
-    });
+    particles = particles.filter(p => (p.life-- > 0));
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; });
 }
 
-// رسم الجزيئات
 function drawParticles() {
     particles.forEach(p => {
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 30;
-        ctx.fillRect(p.x, p.y, 3, 3);
-        ctx.globalAlpha = 1;
+        ctx.fillRect(p.x, p.y, 2, 2);
     });
 }
 
-// فحص التصادمات
 function checkCollisions() {
-    // التصادم مع الأعداء
-    enemies.forEach((enemy, index) => {
-        if (checkCollision(player, enemy)) {
-            health -= 5;
-            if (health <= 0) {
-                health = 0;
-                gameOver();
-            }
+    enemies.forEach(enemy => {
+        if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 30) {
+            health -= 0.5;
+            if (health <= 0) gameOver();
         }
     });
     
-    // جمع الكنوز
-    treasures.forEach((treasure, index) => {
-        if (!treasure.collected && checkCollision(player, treasure)) {
-            treasure.collected = true;
+    treasures.forEach(t => {
+        if (!t.collected && Math.hypot(t.x - player.x, t.y - player.y) < 30) {
+            t.collected = true;
             treasureCount++;
             score += 100;
-            
-            // إنشاء جزيئات عند جمع كنز
-            for (let i = 0; i < 8; i++) {
-                particles.push({
-                    x: treasure.x + treasure.width / 2,
-                    y: treasure.y + treasure.height / 2,
-                    vx: (Math.random() - 0.5) * 5,
-                    vy: (Math.random() - 0.5) * 5 - 2,
-                    life: 25,
-                    color: '#FFD700'
-                });
-            }
         }
     });
-    
-    // الانتقال للمستوى التالي
-    if (enemies.length === 0) {
-        level++;
-        createEnemies();
-        createTreasures();
-    }
 }
 
-// فحص التصادم بين كائنين
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
-}
-
-// تحديث واجهة المستخدم
 function updateHUD() {
-    const scoreElement = document.getElementById('score');
-    const levelElement = document.getElementById('level');
-    const treasureElement = document.getElementById('treasureCount');
-    const healthFill = document.getElementById('healthFill');
-    
-    if (scoreElement) scoreElement.textContent = score;
-    if (levelElement) levelElement.textContent = level;
-    if (treasureElement) treasureElement.textContent = treasureCount;
-    if (healthFill) healthFill.style.width = health + '%';
+    document.getElementById('score').textContent = score;
+    document.getElementById('treasureCount').textContent = treasureCount;
+    document.getElementById('healthFill').style.width = health + '%';
 }
 
-// نهاية اللعبة
 function gameOver() {
-    cancelAnimationFrame(gameLoop);
-    
-    // رسم شاشة نهاية اللعبة
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 48px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('انتهت اللعبة!', canvas.width / 2, canvas.height / 2 - 50);
-    
-    ctx.font = '32px Arial';
-    ctx.fillText('الكنوز المجمعة: ' + treasureCount, canvas.width / 2, canvas.height / 2 + 20);
-    ctx.fillText('النقاط النهائية: ' + score, canvas.width / 2, canvas.height / 2 + 70);
-    ctx.fillText('المستوى: ' + level, canvas.width / 2, canvas.height / 2 + 120);
-    
-    ctx.font = '24px Arial';
-    ctx.fillText('اضغط على زر القائمة للعودة', canvas.width / 2, canvas.height / 2 + 180);
+    alert('انتهت اللعبة! نقاطك: ' + score);
+    initGame();
 }

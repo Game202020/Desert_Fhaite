@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desert Fight - لعبة القتال الصحراوي</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- القائمة الرئيسية -->
+    <div id="mainMenu" class="screen active">
+        <div class="menu-container">
+            <h1 class="game-title">🏜️ Desert Fight</h1>
+            <h2 class="game-subtitle">لعبة القتال الصحراوي</h2>
+            
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="startGame()">
+                    <span class="btn-icon">🎮</span>
+                    ابدأ اللعبة
+                </button>
+                <button class="menu-btn" onclick="showInstructions()">
+                    <span class="btn-icon">📖</span>
+                    التعليمات
+                </button>
+                <button class="menu-btn" onclick="showSettings()">
+                    <span class="btn-icon">⚙️</span>
+                    الإعدادات
+                </button>
+                <button class="menu-btn" onclick="showAbout()">
+                    <span class="btn-icon">ℹ️</span>
+                    حول اللعبة
+                </button>
+            </div>
+            
+            <div class="footer">
+                <p>صنع بـ ❤️ للاعبين العرب</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة التعليمات -->
+    <div id="instructionsScreen" class="screen">
+        <div class="content-container">
+            <h2>📖 التعليمات</h2>
+            <div class="instructions-content">
+                <h3>كيفية اللعب:</h3>
+                <ul>
+                    <li><strong>الأسهم أو WASD:</strong> للتحرك في جميع الاتجاهات</li>
+                    <li><strong>مسافة (Space):</strong> للقفز</li>
+                    <li><strong>النقر بالماوس:</strong> للهجوم</li>
+                    <li><strong>ESC:</strong> للإيقاف المؤقت</li>
+                </ul>
+                
+                <h3>الهدف:</h3>
+                <p>قاتل أعداءك في الصحراء واجمع النقاط لتصبح البطل الأقوى!</p>
+                
+                <h3>نصائح:</h3>
+                <ul>
+                    <li>تجنب الأعداء في البداية حتى تتقن التحكم</li>
+                    <li>اجمع العناصر المتوهجة لزيادة قوتك</li>
+                    <li>استخدم البيئة لصالحك</li>
+                </ul>
+            </div>
+            <button class="back-btn" onclick="backToMenu()">العودة للقائمة</button>
+        </div>
+    </div>
+
+    <!-- شاشة الإعدادات -->
+    <div id="settingsScreen" class="screen">
+        <div class="content-container">
+            <h2>⚙️ الإعدادات</h2>
+            <div class="settings-content">
+                <div class="setting-item">
+                    <label for="volumeSlider">مستوى الصوت:</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="70">
+                    <span id="volumeValue">70%</span>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="difficultySelect">مستوى الصعوبة:</label>
+                    <select id="difficultySelect">
+                        <option value="easy">سهل</option>
+                        <option value="medium" selected>متوسط</option>
+                        <option value="hard">صعب</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="fullscreenCheck">
+                        وضع ملء الشاشة
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="soundCheck" checked>
+                        تفعيل المؤثرات الصوتية
+                    </label>
+                </div>
+            </div>
+            <button class="back-btn" onclick="backToMenu()">العودة للقائمة</button>
+        </div>
+    </div>
+
+    <!-- شاشة حول اللعبة -->
+    <div id="aboutScreen" class="screen">
+        <div class="content-container">
+            <h2>ℹ️ حول اللعبة</h2>
+            <div class="about-content">
+                <h3>Desert Fight v1.0</h3>
+                <p>لعبة قتال 2D في بيئة صحراوية مثيرة</p>
+                
+                <h3>المطور:</h3>
+                <p>Game202020</p>
+                
+                <h3>التقنيات المستخدمة:</h3>
+                <ul>
+                    <li>HTML5 Canvas</li>
+                    <li>JavaScript (ES6+)</li>
+                    <li>CSS3 Animations</li>
+                </ul>
+                
+                <h3>الإصدار:</h3>
+                <p>1.0.0 - 2025</p>
+                
+                <div class="social-links">
+                    <p>تابعنا على GitHub</p>
+                    <a href="https://github.com/Game202020/Desert_Fhaite" target="_blank">
+                        🔗 المستودع
+                    </a>
+                </div>
+            </div>
+            <button class="back-btn" onclick="backToMenu()">العودة للقائمة</button>
+        </div>
+    </div>
+
+    <!-- شاشة اللعبة -->
+    <div id="gameScreen" class="screen">
+        <div class="game-container">
+            <div class="game-hud">
+                <div class="hud-item">
+                    <span>الصحة: </span>
+                    <div class="health-bar">
+                        <div id="healthFill" class="health-fill"></div>
+                    </div>
+                </div>
+                <div class="hud-item">
+                    <span>النقاط: <span id="score">0</span></span>
+                </div>
+                <div class="hud-item">
+                    <span>المستوى: <span id="level">1</span></span>
+                </div>
+            </div>
+            
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="game-controls">
+                <button class="control-btn" onclick="pauseGame()">⏸️ إيقاف</button>
+                <button class="control-btn" onclick="backToMenu()">🏠 القائمة</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

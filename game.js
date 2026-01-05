@@ -167,11 +167,41 @@ function update() {
     // 1. رسم العالم (تحت الظلام)
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
-    ctx.fillStyle = '#d2b48c';
+    
+    // رسم الأرضية الترابية مع نسيج
+    ctx.fillStyle = '#c2a47c'; // لون ترابي أساسي
     ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
     
-    ctx.fillStyle = '#8b7355';
-    obstacles.forEach(obs => { ctx.fillRect(obs.x, obs.y, obs.size, obs.size); });
+    // إضافة حبيبات تراب عشوائية للنسيج
+    ctx.fillStyle = '#b3946d';
+    for(let i=0; i<WORLD_SIZE; i+=150) {
+        for(let j=0; j<WORLD_SIZE; j+=150) {
+            if((i+j)%400 === 0) ctx.fillRect(i, j, 100, 100);
+        }
+    }
+    
+    // رسم العقبات (صخور صحراوية كبيرة)
+    obstacles.forEach(obs => {
+        // رسم جسم الصخرة الأساسي
+        ctx.fillStyle = '#6d5a41';
+        ctx.beginPath();
+        ctx.moveTo(obs.x, obs.y + obs.size * 0.3);
+        ctx.lineTo(obs.x + obs.size * 0.4, obs.y);
+        ctx.lineTo(obs.x + obs.size, obs.y + obs.size * 0.2);
+        ctx.lineTo(obs.x + obs.size * 0.9, obs.y + obs.size);
+        ctx.lineTo(obs.x + obs.size * 0.1, obs.y + obs.size * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        
+        // إضافة ظلال وتفاصيل للصخرة
+        ctx.fillStyle = '#4d3f2e';
+        ctx.beginPath();
+        ctx.moveTo(obs.x + obs.size * 0.6, obs.y + obs.size * 0.2);
+        ctx.lineTo(obs.x + obs.size, obs.y + obs.size * 0.2);
+        ctx.lineTo(obs.x + obs.size * 0.9, obs.y + obs.size);
+        ctx.closePath();
+        ctx.fill();
+    });
     
     ctx.fillStyle = '#ffd700';
     treasures.forEach(t => { if (!t.collected) { ctx.beginPath(); ctx.arc(t.x, t.y, 15, 0, Math.PI*2); ctx.fill(); } });

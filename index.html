@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Desert Fight - لعبة القتال الصحراوي</title>
+    <title>Desert Explorer - استكشاف الصحراء</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- القائمة الرئيسية -->
     <div id="mainMenu" class="screen active">
         <div class="menu-container">
-            <h1 class="game-title">🏜️ Desert Fight</h1>
-            <h2 class="game-subtitle">لعبة القتال الصحراوي</h2>
+            <h1 class="game-title">🏜️ Desert Explorer</h1>
+            <h2 class="game-subtitle">استكشاف الصحراء</h2>
             
             <div class="menu-buttons">
                 <button class="menu-btn" onclick="startGame()">
@@ -43,22 +43,26 @@
         <div class="content-container">
             <h2>📖 التعليمات</h2>
             <div class="instructions-content">
+                <h3>قصة اللعبة:</h3>
+                <p>أنت بطل سعودي تستكشف صحراء مظلمة بحثاً عن الكنوز المخفية. تحمل معك مصباحاً يضيء طريقك، لكن احذر من الأعداء الذين يختبئون في الظلام!</p>
+                
                 <h3>كيفية اللعب:</h3>
                 <ul>
-                    <li><strong>الأسهم أو WASD:</strong> للتحرك في جميع الاتجاهات</li>
-                    <li><strong>مسافة (Space):</strong> للقفز</li>
-                    <li><strong>النقر بالماوس:</strong> للهجوم</li>
-                    <li><strong>ESC:</strong> للإيقاف المؤقت</li>
+                    <li><strong>الحركة:</strong> استخدم D-Pad على اليسار للتحرك</li>
+                    <li><strong>السيف:</strong> اضغط زر "هجوم" لمهاجمة الأعداء</li>
+                    <li><strong>المصباح:</strong> يضيء تلقائياً مساحة حول شخصيتك</li>
+                    <li><strong>الكنوز:</strong> اجمع الكنوز الذهبية لزيادة نقاطك</li>
                 </ul>
                 
                 <h3>الهدف:</h3>
-                <p>قاتل أعداءك في الصحراء واجمع النقاط لتصبح البطل الأقوى!</p>
+                <p>اجمع أكبر عدد من الكنوز، هزم الأعداء، وحقق أعلى نقاط!</p>
                 
                 <h3>نصائح:</h3>
                 <ul>
-                    <li>تجنب الأعداء في البداية حتى تتقن التحكم</li>
-                    <li>اجمع العناصر المتوهجة لزيادة قوتك</li>
-                    <li>استخدم البيئة لصالحك</li>
+                    <li>المصباح يكشف عن الأعداء والكنوز في محيط ضيق</li>
+                    <li>تجنب الأعداء أو قاتلهم بسيفك</li>
+                    <li>كل كنز تجمعه يزيد نقاطك</li>
+                    <li>كلما زاد مستوى اللعبة، زاد عدد الأعداء</li>
                 </ul>
             </div>
             <button class="back-btn" onclick="backToMenu()">العودة للقائمة</button>
@@ -87,13 +91,6 @@
                 
                 <div class="setting-item">
                     <label>
-                        <input type="checkbox" id="fullscreenCheck">
-                        وضع ملء الشاشة
-                    </label>
-                </div>
-                
-                <div class="setting-item">
-                    <label>
                         <input type="checkbox" id="soundCheck" checked>
                         تفعيل المؤثرات الصوتية
                     </label>
@@ -108,21 +105,21 @@
         <div class="content-container">
             <h2>ℹ️ حول اللعبة</h2>
             <div class="about-content">
-                <h3>Desert Fight v1.0</h3>
-                <p>لعبة قتال 2D في بيئة صحراوية مثيرة</p>
+                <h3>Desert Explorer v2.0</h3>
+                <p>لعبة استكشاف صحراوية بنمط البكسل آرت مع نظام إضاءة متقدم</p>
                 
-                <h3>المطور:</h3>
-                <p>Game202020</p>
-                
-                <h3>التقنيات المستخدمة:</h3>
+                <h3>المميزات:</h3>
                 <ul>
-                    <li>HTML5 Canvas</li>
-                    <li>JavaScript (ES6+)</li>
-                    <li>CSS3 Animations</li>
+                    <li>نظام إضاءة ديناميكي (ضباب الحرب)</li>
+                    <li>شخصية سعودية بتصميم بكسل آرت</li>
+                    <li>قتال بالسيف ضد مخلوقات الصحراء</li>
+                    <li>استكشاف كنوز مخفية</li>
+                    <li>مستويات صعوبة متعددة</li>
+                    <li>متوافقة مع الجوالات</li>
                 </ul>
                 
                 <h3>الإصدار:</h3>
-                <p>1.0.0 - 2025</p>
+                <p>2.0.0 - 2025</p>
                 
                 <div class="social-links">
                     <p>تابعنا على GitHub</p>
@@ -146,6 +143,9 @@
                     </div>
                 </div>
                 <div class="hud-item">
+                    <span>الكنوز: <span id="treasureCount">0</span></span>
+                </div>
+                <div class="hud-item">
                     <span>النقاط: <span id="score">0</span></span>
                 </div>
                 <div class="hud-item">
@@ -167,8 +167,7 @@
                     </div>
                 </div>
                 <div class="right-controls">
-                    <button class="action-btn jump-btn" id="btnJump">قفز</button>
-                    <button class="action-btn attack-btn" id="btnAttack">هجوم</button>
+                    <button class="action-btn attack-btn" id="btnAttack">⚔️ هجوم</button>
                 </div>
             </div>
             

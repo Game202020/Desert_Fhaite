@@ -14,21 +14,53 @@
             <p class="subtitle">مستكشف الصحراء</p>
             <div class="menu-buttons">
                 <button class="menu-btn" onclick="startGame()">ابدأ اللعبة</button>
+                <button class="menu-btn" onclick="showScreen('shopScreen')">المتجر (البازار) 💰</button>
                 <button class="menu-btn" onclick="showScreen('instructionsScreen')">التعليمات</button>
                 <button class="menu-btn" onclick="showScreen('settingsScreen')">الإعدادات</button>
-                <button class="menu-btn" onclick="showScreen('aboutScreen')">حول اللعبة</button>
             </div>
+            <div class="total-gold">ذهبك الإجمالي: <span id="totalGoldDisplay">0</span> 💎</div>
+        </div>
+
+        <!-- شاشة المتجر -->
+        <div id="shopScreen" class="screen">
+            <h2>💰 بازار الصحراء</h2>
+            <div class="shop-container">
+                <div class="shop-item">
+                    <div class="item-info">
+                        <h3>بشت ملكي (أسود)</h3>
+                        <p>مظهر فخم وهيبة</p>
+                        <span class="price">500 💎</span>
+                    </div>
+                    <button id="buy-skin-royal" onclick="buyItem('skin', 'royal', 500)">شراء</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <h3>السيف الطويل</h3>
+                        <p>مدى هجوم أبعد</p>
+                        <span class="price">1000 💎</span>
+                    </div>
+                    <button id="buy-weapon-long" onclick="buyItem('weapon', 'long', 1000)">شراء</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <h3>المسدس القديم</h3>
+                        <p>إطلاق نار عن بعد</p>
+                        <span class="price">2500 💎</span>
+                    </div>
+                    <button id="buy-weapon-gun" onclick="buyItem('weapon', 'gun', 2500)">شراء</button>
+                </div>
+            </div>
+            <button class="menu-btn" onclick="showScreen('mainMenu')">عودة</button>
         </div>
 
         <!-- شاشة التعليمات -->
         <div id="instructionsScreen" class="screen">
             <h2>📖 كيفية اللعب</h2>
             <div class="content">
-                <p>🕹️ <b>الحركة:</b> استخدم عصا التحكم على اليسار للتحرك في جميع الاتجاهات.</p>
-                <p>⚔️ <b>الهجوم:</b> اضغط على زر الهجوم الأحمر لضرب الأعداء بسيفك.</p>
-                <p>🔦 <b>المصباح:</b> ينير لك مساحة ضيقة حولك، استكشف الصحراء بحذر.</p>
-                <p>💎 <b>الكنوز:</b> اجمع الكنوز الذهبية لزيادة نقاطك.</p>
-                <p>👹 <b>الأعداء:</b> احذر من لصوص الصحراء والغيلان!</p>
+                <p>🕹️ <b>الحركة:</b> استخدم عصا التحكم على اليسار للتحرك.</p>
+                <p>⚔️ <b>الهجوم:</b> اضغط على زر الهجوم الأحمر لضرب الأعداء.</p>
+                <p>🔫 <b>المسدس:</b> إذا اشتريته، سيظهر زر إطلاق نار جديد.</p>
+                <p>💎 <b>الكنوز:</b> اجمع الكنوز لشراء أدوات من المتجر.</p>
             </div>
             <button class="menu-btn" onclick="showScreen('mainMenu')">عودة</button>
         </div>
@@ -49,36 +81,16 @@
                         <option value="hard">صعب</option>
                     </select>
                 </div>
-                <div class="setting-item">
-                    <span>🔦 مدى المصباح</span>
-                    <input type="range" id="lanternRange" min="150" max="450" value="320" onchange="updateSettings()">
-                </div>
-                <div class="setting-item">
-                    <span>🏃 سرعة اللاعب</span>
-                    <input type="range" id="speedRange" min="3" max="8" value="5" onchange="updateSettings()">
-                </div>
             </div>
             <button class="menu-btn" onclick="showScreen('mainMenu')">حفظ وعودة</button>
-        </div>
-
-        <!-- شاشة حول اللعبة -->
-        <div id="aboutScreen" class="screen">
-            <h2>ℹ️ حول اللعبة</h2>
-            <div class="content">
-                <p>لعبة <b>Desert Explorer</b> هي مغامرة صحراوية بنمط البكسل آرت.</p>
-                <p>تم تطويرها لتجسيد التراث العربي في قالب ألعاب كلاسيكي.</p>
-                <p>الإصدار: 2.5</p>
-            </div>
-            <button class="menu-btn" onclick="showScreen('mainMenu')">عودة</button>
         </div>
 
         <!-- شاشة اللعبة -->
         <div id="gameScreen" class="screen">
             <div id="hud">
-                <div class="hud-item">النقاط: <span id="score">0</span></div>
-                <div class="hud-item">الكنوز: <span id="treasureCount">0</span></div>
+                <div class="hud-item">الذهب: <span id="currentGold">0</span></div>
                 <div class="hud-item health-container">
-                    الصحة: <div class="health-bar"><div id="healthFill"></div></div>
+                    <div class="health-bar"><div id="healthFill"></div></div>
                 </div>
                 <button id="btnPause" onclick="togglePause()">⏸️</button>
             </div>
@@ -86,15 +98,15 @@
             
             <div id="controls">
                 <div id="joystickContainer">
-                    <div id="joystickBase">
-                        <div id="joystickStick"></div>
-                    </div>
+                    <div id="joystickBase"><div id="joystickStick"></div></div>
                 </div>
-                <button id="btnAttack">هجوم ⚔️</button>
+                <div class="action-buttons">
+                    <button id="btnAttack">⚔️</button>
+                    <button id="btnShoot" style="display:none;">🔫</button>
+                </div>
             </div>
         </div>
     </div>
-
     <script src="game.js"></script>
 </body>
 </html>

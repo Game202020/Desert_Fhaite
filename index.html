@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Desert Fight - لعبة القتال الصحراوي</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -154,6 +154,23 @@
             </div>
             
             <canvas id="gameCanvas"></canvas>
+            
+            <!-- أزرار التحكم للجوال -->
+            <div class="mobile-controls">
+                <div class="left-controls">
+                    <div class="dpad">
+                        <button class="dpad-btn dpad-up" id="btnUp">▲</button>
+                        <button class="dpad-btn dpad-left" id="btnLeft">◄</button>
+                        <button class="dpad-btn dpad-center"></button>
+                        <button class="dpad-btn dpad-right" id="btnRight">►</button>
+                        <button class="dpad-btn dpad-down" id="btnDown">▼</button>
+                    </div>
+                </div>
+                <div class="right-controls">
+                    <button class="action-btn jump-btn" id="btnJump">قفز</button>
+                    <button class="action-btn attack-btn" id="btnAttack">هجوم</button>
+                </div>
+            </div>
             
             <div class="game-controls">
                 <button class="control-btn" onclick="pauseGame()">⏸️ إيقاف</button>

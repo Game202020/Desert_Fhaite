@@ -353,3 +353,189 @@ body {
         width: 150px;
     }
 }
+
+/* أزرار التحكم للجوال */
+.mobile-controls {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.left-controls,
+.right-controls {
+    pointer-events: all;
+}
+
+/* D-Pad للحركة */
+.dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 70px);
+    grid-template-rows: repeat(3, 70px);
+    gap: 5px;
+}
+
+.dpad-btn {
+    background: rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.dpad-btn:active {
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0.95);
+}
+
+.dpad-up {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.dpad-left {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.dpad-center {
+    grid-column: 2;
+    grid-row: 2;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+}
+
+.dpad-right {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.dpad-down {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+/* أزرار الأكشن */
+.right-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.action-btn {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.8);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.jump-btn {
+    background: rgba(76, 175, 80, 0.5);
+}
+
+.jump-btn:active {
+    background: rgba(76, 175, 80, 0.8);
+    transform: scale(0.9);
+}
+
+.attack-btn {
+    background: rgba(244, 67, 54, 0.5);
+}
+
+.attack-btn:active {
+    background: rgba(244, 67, 54, 0.8);
+    transform: scale(0.9);
+}
+
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+    .mobile-controls {
+        bottom: 60px;
+    }
+    
+    .dpad {
+        grid-template-columns: repeat(3, 60px);
+        grid-template-rows: repeat(3, 60px);
+    }
+    
+    .action-btn {
+        width: 75px;
+        height: 75px;
+        font-size: 16px;
+    }
+    
+    .game-controls {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .control-btn {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+/* للشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+    .dpad {
+        grid-template-columns: repeat(3, 50px);
+        grid-template-rows: repeat(3, 50px);
+        gap: 3px;
+    }
+    
+    .dpad-btn {
+        font-size: 20px;
+        border-radius: 10px;
+    }
+    
+    .action-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 14px;
+    }
+    
+    .mobile-controls {
+        padding: 0 10px;
+        bottom: 50px;
+    }
+}
+
+/* منع التحديد والسحب على الجوال */
+body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+canvas {
+    touch-action: none;
+}

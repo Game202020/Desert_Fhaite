@@ -3,6 +3,14 @@ let canvas, ctx;
 let player, enemies = [], items = [];
 let score = 0, level = 1, health = 100;
 let keys = {};
+let touchControls = {
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+    jump: false,
+    attack: false
+};
 let gameLoop;
 let isPaused = false;
 
@@ -38,6 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keyup', (e) => {
         keys[e.key] = false;
     });
+    
+    // تهيئة أزرار اللمس للجوال
+    initTouchControls();
 });
 
 // تغيير حجم Canvas
@@ -288,18 +299,95 @@ function drawBackground() {
     ctx.fill();
 }
 
+// تهيئة أزرار التحكم باللمس
+function initTouchControls() {
+    // أزرار الاتجاهات
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
+    const btnJump = document.getElementById('btnJump');
+    const btnAttack = document.getElementById('btnAttack');
+    
+    if (btnLeft) {
+        btnLeft.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.left = true;
+        });
+        btnLeft.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.left = false;
+        });
+    }
+    
+    if (btnRight) {
+        btnRight.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.right = true;
+        });
+        btnRight.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.right = false;
+        });
+    }
+    
+    if (btnUp) {
+        btnUp.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.up = true;
+        });
+        btnUp.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.up = false;
+        });
+    }
+    
+    if (btnDown) {
+        btnDown.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.down = true;
+        });
+        btnDown.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.down = false;
+        });
+    }
+    
+    if (btnJump) {
+        btnJump.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.jump = true;
+        });
+        btnJump.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.jump = false;
+        });
+    }
+    
+    if (btnAttack) {
+        btnAttack.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.attack = true;
+        });
+        btnAttack.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.attack = false;
+        });
+    }
+}
+
 // تحديث اللاعب
 function updatePlayer() {
-    // الحركة الأفقية
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+    // الحركة الأفقية (لوحة المفاتيح + اللمس)
+    if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchControls.right) {
         player.x += player.speed;
     }
-    if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+    if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchControls.left) {
         player.x -= player.speed;
     }
     
-    // القفز
-    if ((keys[' '] || keys['ArrowUp'] || keys['w'] || keys['W']) && !player.jumping) {
+    // القفز (لوحة المفاتيح + اللمس)
+    if ((keys[' '] || keys['ArrowUp'] || keys['w'] || keys['W'] || touchControls.jump || touchControls.up) && !player.jumping) {
         player.velocityY = -15;
         player.jumping = true;
     }

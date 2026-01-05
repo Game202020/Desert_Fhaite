@@ -10,6 +10,14 @@ let attackCooldown = 0;
 let damageFlash = 0; // مؤقت وميض الضرر
 let screenShake = 0; // مؤقت اهتزاز الشاشة
 
+// متغيرات الإعدادات
+let gameSettings = {
+    soundEnabled: true,
+    difficulty: 'medium',
+    lanternRadius: 320,
+    playerSpeed: 5
+};
+
 // أنيميشن اللاعب والأعداء
 let globalFrame = 0;
 let frameCounter = 0;
@@ -22,6 +30,7 @@ const sounds = {
 };
 
 function playSound(name) {
+    if (!gameSettings.soundEnabled) return;
     try { if (sounds[name]) { sounds[name].currentTime = 0; sounds[name].play().catch(e => {}); } } catch (e) {}
 }
 
@@ -95,7 +104,30 @@ function resizeCanvas() {
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
+    const target = document.getElementById(screenId);
+    if (target) target.classList.add('active');
+    
+    // إيقاف اللعبة إذا خرجنا من شاشة اللعبة
+    if (screenId !== 'gameScreen' && gameLoop) {
+        cancelAnimationFrame(gameLoop);
+        gameLoop = null;
+    }
+}
+
+function updateSettings() {
+    gameSettings.soundEnabled = document.getElementById('soundToggle').checked;
+    gameSettings.difficulty = document.getElementById('difficultySelect').value;
+    gameSettings.lanternRadius = parseInt(document.getElementById('lanternRange').value);
+    gameSettings.playerSpeed = parseInt(document.getElementById('speedRange').value);
+    
+    if (player) player.speed = gameSettings.playerSpeed;
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    const btn = document.getElementById('btnPause');
+    btn.textContent = isPaused ? '▶️' : '⏸️';
+    if (!isPaused) update();
 }
 
 function startGame() {
@@ -108,7 +140,12 @@ function startGame() {
 function initGame() {
     score = 0; health = 100; treasureCount = 0;
     enemies = []; treasures = []; obstacles = [];
-    player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 60, height: 80, speed: 5, moving: false };
+    player = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, width: 60, height: 80, speed: gameSettings.playerSpeed, moving: false };
+    
+    // تعديل الصعوبة
+    let enemyCount = 25;
+    if (gameSettings.difficulty === 'easy') enemyCount = 15;
+    if (gameSettings.difficulty === 'hard') enemyCount = 40;
     
     // توليد عقبات (صخور بكسل آرت)
     for (let i = 0; i < 100; i++) obstacles.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, size: 60 + Math.random() * 40 });
@@ -331,7 +368,7 @@ function drawLanternEffect() {
     ctx.save();
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const gradient = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 320);
+    const gradient = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, gameSettings.lanternRadius);
     gradient.addColorStop(0, 'rgba(255, 200, 100, 0.05)'); // توهج دافئ خفيف
     gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.4)');
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0.96)');

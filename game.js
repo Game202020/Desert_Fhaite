@@ -30,7 +30,7 @@ let player, camera, world;
 let joystick = { active: false, x: 0, y: 0, id: null };
 let frameCount = 0;
 let totalGold = parseInt(localStorage.getItem('totalGold')) || 0;
-let inventory = JSON.parse(localStorage.getItem('inventory')) || { skin: 'default', weapon: 'default' };
+let inventory = JSON.parse(localStorage.getItem('inventory')) || { skin: 'default', weapon: 'default', keys: [] };
 let score = 0;
 
 // --- نظام الصوت الاحترافي ---
@@ -63,6 +63,11 @@ function updateTotalGoldDisplay() {
     if (el) el.textContent = totalGold;
 }
 
+function updateKeysDisplay() {
+    const el = document.getElementById('currentKeys');
+    if (el) el.textContent = inventory.keys.length;
+}
+
 // --- محرك اللعبة (The Master Engine) ---
 function initGame() {
     player = {
@@ -92,7 +97,11 @@ function initGame() {
         bullets: [],
         particles: [],
         decorations: [],
-        boss: null
+        palaces: [], // القصور العربية
+        keys: [],    // المفاتيح
+        boss: null,
+        isInsidePalace: false,
+        currentPalace: null
     };
 
     generateMasterWorld();
@@ -120,6 +129,23 @@ function generateMasterWorld() {
     for(let i=0; i<150; i++) world.treasures.push({ x: Math.random()*CONFIG.WORLD_SIZE, y: Math.random()*CONFIG.WORLD_SIZE, active: true });
     for(let i=0; i<40; i++) world.healthPacks.push({ x: Math.random()*CONFIG.WORLD_SIZE, y: Math.random()*CONFIG.WORLD_SIZE, active: true });
     
+    // توليد القصر والمفتاح
+    const palaceKeyId = 'Royal_Scepter_Key';
+    world.palaces.push({
+        x: 1000, y: 1000, size: 250,
+        isLocked: true,
+        keyId: palaceKeyId,
+        name: 'قصر الرمال المنسية',
+        internalEnemies: 15,
+        internalTreasures: 10
+    });
+    world.keys.push({
+        x: 5000, y: 5000,
+        keyId: palaceKeyId,
+        active: true,
+        name: 'صولجان المفتاح الملكي'
+    });
+
     spawnEnemies(50);
 }
 
@@ -134,6 +160,32 @@ function spawnEnemies(count) {
             maxHealth: 100,
             speed: 2.2 + Math.random()*1.8,
             anim: 0
+        });
+    }
+}
+
+function spawnInternalEnemies(count) {
+    const types = ['guard', 'phantom', 'elite_guard'];
+    for(let i=0; i<count; i++) {
+        world.enemies.push({
+            x: 100 + Math.random()*1800,
+            y: 100 + Math.random()*1800,
+            type: types[Math.floor(Math.random()*types.length)],
+            health: 150,
+            maxHealth: 150,
+            speed: 3.0 + Math.random()*1.5,
+            anim: 0
+        });
+    }
+}
+
+function spawnInternalTreasures(count) {
+    for(let i=0; i<count; i++) {
+        world.treasures.push({
+            x: 100 + Math.random()*1800,
+            y: 100 + Math.random()*1800,
+            active: true,
+            value: 200 + Math.random()*300 // كنوز داخلية أغلى
         });
     }
 }
@@ -159,8 +211,14 @@ function update() {
         player.anim = 0;
     }
 
-    player.x = Math.max(150, Math.min(CONFIG.WORLD_SIZE-150, player.x + player.vx));
-    player.y = Math.max(150, Math.min(CONFIG.WORLD_SIZE-150, player.y + player.vy));
+    if (!world.isInsidePalace) {
+        player.x = Math.max(150, Math.min(CONFIG.WORLD_SIZE-150, player.x + player.vx));
+        player.y = Math.max(150, Math.min(CONFIG.WORLD_SIZE-150, player.y + player.vy));
+    } else {
+        // حدود المتاهة الداخلية (حجم افتراضي 2000x2000)
+        player.x = Math.max(50, Math.min(1950, player.x + player.vx));
+        player.y = Math.max(50, Math.min(1950, player.y + player.vy));
+    }
 
     // تصادم العقبات (Advanced Collision)
     world.obstacles.forEach(o => {
@@ -171,6 +229,61 @@ function update() {
             player.y = o.y + Math.sin(angle) * (o.r + 30);
         }
     });
+
+    // منطق المفاتيح والقصور
+    if (!world.isInsidePalace) {
+        // جمع المفاتيح
+        world.keys.forEach(k => {
+            if (k.active && Math.hypot(player.x - k.x, player.y - k.y) < 70) {
+                k.active = false;
+                inventory.keys.push(k.keyId);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                sounds.treasure.play().catch(()=>{});
+                updateKeysDisplay(); // تحديث عرض المفاتيح
+                alert(`تم العثور على المفتاح: ${k.name}! يمكنك الآن فتح القصر.`);
+            }
+        });
+
+        // التفاعل مع القصور
+        world.palaces.forEach(p => {
+            if (Math.hypot(player.x - p.x, player.y - p.y) < p.size/2 + 50) {
+                if (p.isLocked) {
+                    if (inventory.keys.includes(p.keyId)) {
+                        p.isLocked = false;
+                        alert(`تم فتح ${p.name} باستخدام ${p.keyId}! ادخل الآن.`);
+                    } else {
+                        alert(`القصر مغلق! تحتاج إلى ${p.keyId} لفتحه.`);
+                    }
+                } else {
+                    // الدخول للقصر
+                    world.isInsidePalace = true;
+                    world.currentPalace = p;
+                    // إعادة تعيين موقع اللاعب إلى نقطة بداية داخلية
+                    player.x = 1000; player.y = 1900; // نقطة دخول
+                    // إعادة تعيين الكاميرا
+                    camera.x = player.x; camera.y = player.y;
+                    // إعادة تعيين الأعداء والكنوز لداخل القصر
+                    world.enemies = [];
+                    world.treasures = [];
+                    spawnInternalEnemies(p.internalEnemies);
+                    spawnInternalTreasures(p.internalTreasures);
+                    alert(`أهلاً بك في متاهة ${p.name}! ابحث عن الكنز واخرج حياً. نقطة الخروج في الأعلى.`);
+                }
+            }
+        });
+    } else {
+        // منطق الخروج من القصر (بمجرد الوصول إلى نقطة معينة)
+        if (Math.hypot(player.x - 1000, player.y - 100) < 50) {
+            world.isInsidePalace = false;
+            // إعادة اللاعب إلى موقع القصر الخارجي
+            player.x = world.currentPalace.x + world.currentPalace.size/2 + 100;
+            player.y = world.currentPalace.y;
+            world.currentPalace = null;
+            // إعادة توليد عالم الصحراء (لإعادة الأعداء والكنوز الخارجية)
+            generateMasterWorld();
+            alert('لقد خرجت من القصر. تم إعادة توليد عالم الصحراء.');
+        }
+    }
 
     // الكاميرا (Cinematic Lerp)
     camera.x += (player.x - canvas.width/2 - camera.x) * 0.08;
@@ -233,8 +346,14 @@ function render() {
 
     // رسم العالم
     drawMasterGround();
-    world.decorations.forEach(d => drawDecoration(d));
-    world.obstacles.forEach(o => drawMasterObstacle(o));
+    
+    if (!world.isInsidePalace) {
+        world.decorations.forEach(d => drawDecoration(d));
+        world.obstacles.forEach(o => drawMasterObstacle(o));
+        world.palaces.forEach(p => drawMasterPalace(p)); // رسم القصور
+        world.keys.forEach(k => { if(k.active) drawMasterKey(k); }); // رسم المفاتيح
+    }
+    
     world.treasures.forEach(t => { if(t.active) drawMasterTreasure(t); });
     world.enemies.forEach(e => drawMasterEnemy(e));
     
@@ -256,15 +375,31 @@ function render() {
 }
 
 function drawMasterGround() {
-    ctx.fillStyle = THEME.SAND;
-    ctx.fillRect(0, 0, CONFIG.WORLD_SIZE, CONFIG.WORLD_SIZE);
-    
-    // نسيج الرمل المتقدم
-    ctx.fillStyle = 'rgba(0,0,0,0.04)';
-    for(let i=0; i<CONFIG.WORLD_SIZE; i+=300) {
-        for(let j=0; j<CONFIG.WORLD_SIZE; j+=300) {
-            ctx.fillRect(i + (i*j)%200, j + (i+j)%200, 6, 6);
+    if (!world.isInsidePalace) {
+        ctx.fillStyle = THEME.SAND;
+        ctx.fillRect(0, 0, CONFIG.WORLD_SIZE, CONFIG.WORLD_SIZE);
+        
+        // نسيج الرمل المتقدم
+        ctx.fillStyle = 'rgba(0,0,0,0.04)';
+        for(let i=0; i<CONFIG.WORLD_SIZE; i+=300) {
+            for(let j=0; j<CONFIG.WORLD_SIZE; j+=300) {
+                ctx.fillRect(i + (i*j)%200, j + (i+j)%200, 6, 6);
+            }
         }
+    } else {
+        // أرضية القصر (متاهة)
+        ctx.fillStyle = THEME.ROYAL_BLACK;
+        ctx.fillRect(0, 0, 2000, 2000); // حجم افتراضي للمتاهة
+        
+        // جدران المتاهة (تمثيل بسيط)
+        ctx.fillStyle = '#4e342e';
+        // جدار الخروج
+        ctx.fillRect(900, 0, 200, 100);
+        // جدران داخلية
+        ctx.fillRect(200, 200, 100, 1600);
+        ctx.fillRect(1700, 200, 100, 1600);
+        ctx.fillRect(400, 400, 1200, 100);
+        ctx.fillRect(400, 1500, 1200, 100);
     }
 }
 
@@ -361,6 +496,45 @@ function drawMasterTreasure(t) {
     ctx.restore();
 }
 
+function drawMasterPalace(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    
+    // القاعدة
+    ctx.fillStyle = '#4e342e';
+    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+    
+    // القبة
+    ctx.fillStyle = '#795548';
+    ctx.beginPath(); ctx.arc(0, -p.size/2, p.size/3, Math.PI, 0); ctx.fill();
+    
+    // الباب
+    ctx.fillStyle = p.isLocked ? '#a80000' : '#4caf50';
+    ctx.fillRect(-20, p.size/2 - 60, 40, 60);
+    
+    // القفل
+    if (p.isLocked) {
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(0, p.size/2 - 30, 8, 0, Math.PI*2); ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawMasterKey(k) {
+    ctx.save();
+    ctx.translate(k.x, k.y);
+    ctx.rotate(frameCount * 0.08);
+    
+    ctx.fillStyle = THEME.UI_GOLD;
+    ctx.shadowBlur = 15; ctx.shadowColor = THEME.UI_GOLD;
+    ctx.fillRect(-5, -20, 10, 40); // الجسم
+    ctx.beginPath(); ctx.arc(0, -20, 10, 0, Math.PI*2); ctx.fill(); // الرأس
+    ctx.fillRect(-10, 10, 20, 5); // الأسنان
+    
+    ctx.restore();
+}
+
 function drawDecoration(d) {
     ctx.fillStyle = d.type === 'bones' ? '#f5f5f5' : '#5d4037';
     ctx.fillRect(d.x, d.y, d.size, d.size);
@@ -368,17 +542,31 @@ function drawDecoration(d) {
 
 function drawMasterLighting() {
     const centerX = canvas.width / 2, centerY = canvas.height / 2;
-    const grad = ctx.createRadialGradient(centerX, centerY, 120, centerX, centerY, CONFIG.LANTERN_RADIUS);
-    grad.addColorStop(0, 'rgba(255,240,200,0)');
-    grad.addColorStop(0.5, 'rgba(0,0,0,0.5)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.99)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (!world.isInsidePalace) {
+        const grad = ctx.createRadialGradient(centerX, centerY, 120, centerX, centerY, CONFIG.LANTERN_RADIUS);
+        grad.addColorStop(0, 'rgba(255,240,200,0)');
+        grad.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.99)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+        // إضاءة داخلية خافتة
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const grad = ctx.createRadialGradient(centerX, centerY, 100, centerX, centerY, CONFIG.LANTERN_RADIUS * 0.8);
+        grad.addColorStop(0, 'rgba(255,240,200,0.1)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 }
 
 function drawHUD() {
     document.getElementById('currentGold').textContent = totalGold;
     document.getElementById('healthFill').style.width = player.health + '%';
+    updateKeysDisplay();
 }
 
 function createExplosion(x, y, color, count) {

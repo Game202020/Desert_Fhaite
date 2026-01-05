@@ -369,59 +369,37 @@ body {
     pointer-events: all;
 }
 
-/* D-Pad للحركة */
-.dpad {
-    display: grid;
-    grid-template-columns: repeat(3, 70px);
-    grid-template-rows: repeat(3, 70px);
-    gap: 5px;
+/* Joystick للحركة */
+#joystickContainer {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: none;
 }
 
-.dpad-btn {
-    background: rgba(255, 193, 7, 0.3);
-    border: 3px solid rgba(255, 193, 7, 0.6);
-    border-radius: 15px;
-    color: #ffc107;
-    font-size: 24px;
-    font-weight: bold;
+#joystickBase {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 3px solid rgba(255, 193, 7, 0.4);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+#joystickStick {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     cursor: pointer;
-    transition: all 0.1s ease;
-    backdrop-filter: blur(10px);
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.dpad-btn:active {
-    background: rgba(255, 193, 7, 0.6);
-    transform: scale(0.95);
-}
-
-.dpad-up {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-.dpad-left {
-    grid-column: 1;
-    grid-row: 2;
-}
-
-.dpad-center {
-    grid-column: 2;
-    grid-row: 2;
-    background: rgba(255, 193, 7, 0.1);
-    border: 2px solid rgba(255, 193, 7, 0.3);
-    pointer-events: none;
-}
-
-.dpad-right {
-    grid-column: 3;
-    grid-row: 2;
-}
-
-.dpad-down {
-    grid-column: 2;
-    grid-row: 3;
+    transition: transform 0.1s ease;
 }
 
 /* أزرار الأكشن */

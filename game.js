@@ -242,16 +242,27 @@ function update() {
 
 function drawLanternEffect() {
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     
-    // إنشاء فتحة المصباح في منتصف الشاشة (مكان اللاعب دائماً)
+    // 1. رسم طبقة سوداء تغطي الشاشة بالكامل
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.92)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // 2. استخدام 'destination-out' لعمل فتحة دائرية شفافة (المصباح)
     ctx.globalCompositeOperation = 'destination-out';
+    
+    // إنشاء تدرج دائري لجعل حواف الضوء ناعمة
+    const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 50,
+        canvas.width / 2, canvas.height / 2, 220
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(canvas.width/2, canvas.height/2, 200, 0, Math.PI*2);
+    ctx.arc(canvas.width / 2, canvas.height / 2, 220, 0, Math.PI * 2);
     ctx.fill();
     
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 }
 
